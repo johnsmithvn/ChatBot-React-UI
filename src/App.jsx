@@ -1,18 +1,38 @@
 import OpenAI from "openai";
 import { useState } from "react";
+import CryptoJS from "crypto-js";
 
-// Khởi tạo OpenAI instance
-// Lấy key từ https://platform.openai.com/api-keys
+// Lấy secret key từ biến môi trường
+
+ const secretKey = import.meta.env.VITE_ENCRYPTION_SECRET;
+ const envApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+// Hàm mã hóa key
+function encryptKey(rawKey) {
+  return CryptoJS.AES.encrypt(rawKey, secretKey).toString();
+}
+
+// Hàm giải mã key
+function decryptKey(encryptedKey) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(encryptedKey, secretKey);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (e) {
+    console.error("Không giải mã được API key:", e);
+    return null;
+  }
+}
+
+// Lấy key từ localStorage (đã mã hóa) và giải mã
+const encryptedKey = localStorage.getItem("user_api_key");
+const userApiKey = encryptedKey ? decryptKey(encryptedKey) : null;
+
+// Ưu tiên key người dùng nếu có
 const openai = new OpenAI({
-  // KHUYẾN CÁO: Đừng bao giờ để key trong code như thế này
-  // Nên lưu key ở server, hoặc để người dùng tự nhập key
-  apiKey: "",
-
-  // Khi chạy ở browser, cần thêm option này
+  apiKey: userApiKey || envApiKey,
   dangerouslyAllowBrowser: true,
 });
 
-// Kiểm tra xem tin nhắn có phải là của bot không
 function isBotMessage(chatMessage) {
   return chatMessage.role === "assistant";
 }
@@ -21,14 +41,12 @@ function App() {
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
 
-  // Gọi hàm này khi người dùng bấm enter, gửi tin nhắn
   const submitForm = async (e) => {
     e.preventDefault();
+    if (!message.trim()) return;
 
-    // Clear message ban đầu
     setMessage("");
 
-    // Thêm tin nhắn người dùng và tin nhắn của bot vào danh sách
     const userMessage = { role: "user", content: message };
     const waitingBotMessage = {
       role: "assistant",
@@ -36,22 +54,61 @@ function App() {
     };
     setChatHistory([...chatHistory, userMessage, waitingBotMessage]);
 
-    // Gọi OpenAI API để lấy kết quả
-    const chatCompletion = await openai.chat.completions.create({
-      messages: [...chatHistory, userMessage],
-      model: "gpt-4o-mini",
-    });
+    try {
+      const chatCompletion = await openai.chat.completions.create({
+        messages: [...chatHistory, userMessage],
+        model: "gpt-4o-mini",
+      });
 
-    // Lấy tin nhắn của bot từ response, hiển thị cho người dùng
-    const response = chatCompletion.choices[0].message.content;
-    const botMessage = { role: "assistant", content: response };
-    setChatHistory([...chatHistory, userMessage, botMessage]);
+      const response = chatCompletion.choices[0].message.content;
+      const botMessage = { role: "assistant", content: response };
+      setChatHistory([...chatHistory, userMessage, botMessage]);
+    } catch (error) {
+      console.error("Lỗi gọi OpenAI:", error);
+      const botMessage = {
+        role: "assistant",
+        content: "❌ Lỗi gọi OpenAI API. Kiểm tra API key hoặc kết nối mạng.",
+      };
+      setChatHistory([...chatHistory, userMessage, botMessage]);
+    }
   };
 
   return (
     <div className="bg-gray-100 h-screen flex flex-col">
       <div className="container mx-auto p-4 flex flex-col h-full max-w-2xl">
-        <h1 className="text-2xl font-bold mb-4">ChatUI với React + OpenAI</h1>
+        <h1 className="text-2xl font-bold mb-2">ChatUI với React + OpenAI</h1>
+        <p className="text-sm text-gray-500 mb-4">
+          Đang dùng API key từ:{" "}
+          <span className="font-mono bg-gray-200 px-2 py-1 rounded">
+            {userApiKey ? "Người dùng nhập (mã hóa)" : "ENV (mặc định)"}
+          </span>
+        </p>
+
+        <div className="mb-4 flex gap-4 items-center">
+          <button
+            onClick={() => {
+              const newKey = prompt("Nhập OpenAI API Key của bạn:");
+              if (newKey) {
+                const encrypted = encryptKey(newKey);
+                localStorage.setItem("user_api_key", encrypted);
+                window.location.reload();
+              }
+            }}
+            className="text-sm text-blue-600 underline"
+          >
+            Nhập key thủ công
+          </button>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem("user_api_key");
+              window.location.reload();
+            }}
+            className="text-sm text-red-600 underline"
+          >
+            Dùng lại key mặc định
+          </button>
+        </div>
 
         <form className="flex" onSubmit={submitForm}>
           <input
