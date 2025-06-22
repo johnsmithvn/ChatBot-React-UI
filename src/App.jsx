@@ -2,17 +2,13 @@ import OpenAI from "openai";
 import { useState } from "react";
 import CryptoJS from "crypto-js";
 
-// Lấy secret key từ biến môi trường
+const secretKey = import.meta.env.VITE_ENCRYPTION_SECRET;
+const envApiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
- const secretKey = import.meta.env.VITE_ENCRYPTION_SECRET;
- const envApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
-// Hàm mã hóa key
 function encryptKey(rawKey) {
   return CryptoJS.AES.encrypt(rawKey, secretKey).toString();
 }
 
-// Hàm giải mã key
 function decryptKey(encryptedKey) {
   try {
     const bytes = CryptoJS.AES.decrypt(encryptedKey, secretKey);
@@ -23,18 +19,16 @@ function decryptKey(encryptedKey) {
   }
 }
 
-// Lấy key từ localStorage (đã mã hóa) và giải mã
 const encryptedKey = localStorage.getItem("user_api_key");
 const userApiKey = encryptedKey ? decryptKey(encryptedKey) : null;
 
-// Ưu tiên key người dùng nếu có
 const openai = new OpenAI({
   apiKey: userApiKey || envApiKey,
   dangerouslyAllowBrowser: true,
 });
 
-function isBotMessage(chatMessage) {
-  return chatMessage.role === "assistant";
+function isBotMessage(msg) {
+  return msg.role === "assistant";
 }
 
 function App() {
@@ -45,46 +39,47 @@ function App() {
     e.preventDefault();
     if (!message.trim()) return;
 
-    setMessage("");
-
     const userMessage = { role: "user", content: message };
     const waitingBotMessage = {
       role: "assistant",
-      content: "Vui lòng chờ bot trả lời...",
+      content: "🤖 Đang nghĩ trả lời...",
     };
+
     setChatHistory([...chatHistory, userMessage, waitingBotMessage]);
+    setMessage("");
 
     try {
-      const chatCompletion = await openai.chat.completions.create({
+      const response = await openai.chat.completions.create({
         messages: [...chatHistory, userMessage],
         model: "gpt-4o-mini",
       });
-
-      const response = chatCompletion.choices[0].message.content;
-      const botMessage = { role: "assistant", content: response };
-      setChatHistory([...chatHistory, userMessage, botMessage]);
-    } catch (error) {
-      console.error("Lỗi gọi OpenAI:", error);
       const botMessage = {
         role: "assistant",
-        content: "❌ Lỗi gọi OpenAI API. Kiểm tra API key hoặc kết nối mạng.",
+        content: response.choices[0].message.content,
       };
       setChatHistory([...chatHistory, userMessage, botMessage]);
+    } catch (error) {
+      console.error("Lỗi OpenAI:", error);
+      const errorMsg = {
+        role: "assistant",
+        content: "❌ Lỗi gọi API. Kiểm tra kết nối hoặc API key.",
+      };
+      setChatHistory([...chatHistory, userMessage, errorMsg]);
     }
   };
 
   return (
-    <div className="bg-gray-100 h-screen flex flex-col">
-      <div className="container mx-auto p-4 flex flex-col h-full max-w-2xl">
-        <h1 className="text-2xl font-bold mb-2">ChatUI với React + OpenAI</h1>
-        <p className="text-sm text-gray-500 mb-4">
-          Đang dùng API key từ:{" "}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-2">
+      <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl">
+        <h1 className="text-3xl font-bold mb-2 text-center">💬 Chat với GPT</h1>
+        <p className="text-xs text-center text-gray-500 mb-4">
+          Đang dùng API key:{" "}
           <span className="font-mono bg-gray-200 px-2 py-1 rounded">
-            {userApiKey ? "Người dùng nhập (mã hóa)" : "ENV (mặc định)"}
+            {userApiKey ? "Tự nhập (🔐)" : "Mặc định (ENV)"}
           </span>
         </p>
 
-        <div className="mb-4 flex gap-4 items-center">
+        <div className="flex justify-center gap-4 mb-4 text-sm">
           <button
             onClick={() => {
               const newKey = prompt("Nhập OpenAI API Key của bạn:");
@@ -94,56 +89,57 @@ function App() {
                 window.location.reload();
               }
             }}
-            className="text-sm text-blue-600 underline"
+            className="text-blue-600 underline"
           >
             Nhập key thủ công
           </button>
-
           <button
             onClick={() => {
               localStorage.removeItem("user_api_key");
               window.location.reload();
             }}
-            className="text-sm text-red-600 underline"
+            className="text-red-600 underline"
           >
             Dùng lại key mặc định
           </button>
         </div>
 
-        <form className="flex" onSubmit={submitForm}>
+        <form onSubmit={submitForm} className="flex mb-4">
           <input
             type="text"
-            placeholder="Tin nhắn của bạn..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="flex-grow p-2 rounded-l border border-gray-300"
+            placeholder="Nhập tin nhắn..."
+            className="flex-grow p-2 border border-gray-300 rounded-l"
           />
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600"
           >
-            Gửi tin nhắn
+            Gửi
           </button>
         </form>
 
-        <div className="flex-grow overflow-y-auto mt-4 bg-white rounded shadow p-4">
-          {chatHistory.map((chatMessage, i) => (
+        <div className="h-96 overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+          {chatHistory.map((msg, i) => (
             <div
               key={i}
-              className={`mb-2 ${
-                isBotMessage(chatMessage) ? "text-right" : ""
+              className={`flex ${
+                isBotMessage(msg) ? "justify-end" : "justify-start"
               }`}
             >
-              <p className="text-gray-600 text-sm">
-                {isBotMessage(chatMessage) ? "Bot" : "User"}
-              </p>
-              <p
-                className={`p-2 rounded-lg inline-block ${
-                  isBotMessage(chatMessage) ? "bg-green-100" : "bg-blue-100"
+              <div
+                className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+                  isBotMessage(msg)
+                    ? "bg-green-100 text-right"
+                    : "bg-blue-100 text-left"
                 }`}
               >
-                {chatMessage.content}
-              </p>
+                <p className="font-semibold text-xs text-gray-500 mb-1">
+                  {isBotMessage(msg) ? "🤖 Bot" : "🧑 Người dùng"}
+                </p>
+                <p>{msg.content}</p>
+              </div>
             </div>
           ))}
         </div>
