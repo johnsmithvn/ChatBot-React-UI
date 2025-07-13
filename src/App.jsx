@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import CryptoJS from "crypto-js";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 
 const secretKey = import.meta.env.VITE_ENCRYPTION_SECRET;
 const envApiKey = import.meta.env.VITE_OPENAI_API_KEY;
@@ -24,11 +27,51 @@ function isBotMessage(msg) {
   return msg.role === "assistant";
 }
 
+// System message chung cho cả OpenAI và Local Model
+const SYSTEM_MESSAGE = {
+  role: "system",
+  content: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
+
+🎯 **Quy tắc định dạng:**
+- Sử dụng **bold** cho từ khóa quan trọng
+- Sử dụng \`inline code\` cho tên function, variable, command
+- Sử dụng \`\`\`language cho code blocks với ngôn ngữ cụ thể
+- Sử dụng ## cho headers chính, ### cho sub-headers  
+- Sử dụng - hoặc 1. cho lists
+- Sử dụng > cho blockquotes khi cần nhấn mạnh
+- Sử dụng | | cho tables khi trình bày data
+
+📝 **Ví dụ format tốt:**
+## Giải pháp
+Để tạo **function tính giai thừa**, bạn có thể sử dụng:
+
+### Cách 1: Đệ quy
+\`\`\`javascript
+function factorial(n) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+\`\`\`
+
+### Cách 2: Vòng lặp  
+\`\`\`javascript
+function factorial(n) {
+  let result = 1;
+  for (let i = 2; i <= n; i++) {
+    result *= i;
+  }
+  return result;
+}
+\`\`\`
+
+Hãy luôn format đẹp để dễ đọc!`
+};
+
 // 🧠 Gọi LM Studio
 async function callLocalModel(chatHistory, userMessage) {
   const model = "local-model-name"; // Đổi thành tên model local thật sự
 
-  const messages = [...chatHistory, userMessage];
+  const messages = [SYSTEM_MESSAGE, ...chatHistory, userMessage];
   if (!messages.length) throw new Error("🛑 Không có message để gửi!");
 
   const res = await fetch("/api/local/v1/chat/completions", {
@@ -55,7 +98,7 @@ async function callOpenAI(chatHistory, userMessage) {
     },
     body: JSON.stringify({
       model: "gpt-4o-mini",
-      messages: [...chatHistory, userMessage],
+      messages: [SYSTEM_MESSAGE, ...chatHistory, userMessage],
     }),
   });
   const data = await res.json();
@@ -193,22 +236,45 @@ function App() {
             {chatHistory.map((msg, i) => (
               <div
                 key={i}
-                className={`flex ${
-                  isBotMessage(msg) ? "justify-end" : "justify-start"
+                className={`flex items-start gap-3 ${
+                  isBotMessage(msg) ? "justify-start" : "justify-end"
                 }`}
               >
+                {isBotMessage(msg) && (
+                  <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                    🤖
+                  </div>
+                )}
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
                     isBotMessage(msg)
-                      ? "bg-green-100 text-left"
-                      : "bg-blue-100 text-left"
+                      ? "bg-gray-50 text-left border border-gray-200 shadow-sm"
+                      : "bg-blue-600 text-white text-left"
                   }`}
                 >
-                  <p className="font-semibold text-xs text-gray-500 mb-1">
-                    {isBotMessage(msg) ? "🤖 Bot" : "🧑 Người dùng"}
-                  </p>
-                  <p>{msg.content}</p>
+                  {!isBotMessage(msg) && (
+                    <p className="font-semibold text-xs text-blue-200 mb-1">
+                      👤 Bạn
+                    </p>
+                  )}
+                  {isBotMessage(msg) ? (
+                    <div className="markdown-content">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
                 </div>
+                {!isBotMessage(msg) && (
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                    👤
+                  </div>
+                )}
               </div>
             ))}
             <div ref={messagesEndRef} />
