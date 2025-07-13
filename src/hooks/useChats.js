@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { generateChatTitle } from '../utils/helpers';
 import { OpenAIService } from '../services/openai';
@@ -14,6 +14,12 @@ export function useChats(settings = {}) {
 
   // Lấy chat hiện tại
   const currentChat = chats.find(chat => chat.id === currentChatId);
+
+  // Debug effect để track changes
+  useEffect(() => {
+    console.log('Chats updated:', chats);
+    console.log('Current chat:', currentChat);
+  }, [chats, currentChat]);
 
   /**
    * Tạo chat mới
@@ -65,22 +71,29 @@ export function useChats(settings = {}) {
   /**
    * Cập nhật tin nhắn trong chat
    */
-  const updateChatMessages = useCallback((chatId, newMessage) => {
-    setChats(prev => prev.map(chat => {
-      if (chat.id === chatId) {
-        const updatedMessages = [...chat.messages, newMessage];
-        return {
-          ...chat,
-          messages: updatedMessages,
-          updatedAt: new Date().toISOString(),
-          // Auto-generate title từ first user message
-          title: chat.messages.length === 0 && newMessage.role === 'user' 
-            ? generateChatTitle(newMessage.content) 
-            : chat.title
-        };
-      }
-      return chat;
-    }));
+  const updateChatMessages = useCallback((chatId, newMessages) => {
+    console.log('Updating chat messages for chat:', chatId, 'with messages:', newMessages);
+    
+    setChats(prevChats => {
+      const updatedChats = prevChats.map(chat => {
+        if (chat.id === chatId) {
+          const updatedChat = {
+            ...chat,
+            messages: newMessages,
+            updatedAt: new Date().toISOString(),
+            // Auto-generate title từ first user message
+            title: chat.messages?.length === 0 && newMessages.length > 0 && newMessages[0].role === 'user' 
+              ? generateChatTitle(newMessages[0].content) 
+              : chat.title
+          };
+          console.log('Updated chat:', updatedChat);
+          return updatedChat;
+        }
+        return chat;
+      });
+      console.log('All updated chats:', updatedChats);
+      return updatedChats;
+    });
   }, [setChats]);
 
   /**
@@ -106,29 +119,32 @@ export function useChats(settings = {}) {
 
     setIsLoading(true);
 
+    // Lấy messages hiện tại TRƯỚC khi update
+    const currentMessages = currentChat?.messages || [];
+
+    // Tạo tin nhắn user
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: messageContent.trim(),
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('Adding user message:', userMessage);
+    console.log('Current messages before update:', currentMessages);
+
+    // Hiển thị user message ngay lập tức
+    const messagesWithUser = [...currentMessages, userMessage];
+    updateChatMessages(currentChatId, messagesWithUser);
+
     try {
-      // Thêm tin nhắn user
-      const userMessage = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: messageContent.trim(),
-        timestamp: new Date().toISOString()
-      };
+      // Chuẩn bị messages cho API
+      const messagesForAPI = messagesWithUser.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
-      updateChatMessages(currentChatId, userMessage);
-
-      // Chuẩn bị messages cho API (không include id và timestamp)
-      const currentMessages = currentChat?.messages || [];
-      const messagesForAPI = [
-        ...currentMessages.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        })),
-        {
-          role: 'user',
-          content: messageContent.trim()
-        }
-      ];
+      console.log('All messages for API:', messagesForAPI);
 
       // Gọi OpenAI API
       const openaiService = new OpenAIService(apiKey);
@@ -142,7 +158,9 @@ export function useChats(settings = {}) {
         timestamp: new Date().toISOString()
       };
 
-      updateChatMessages(currentChatId, assistantMessage);
+      // Cập nhật với cả user message và assistant message
+      const finalMessages = [...messagesWithUser, assistantMessage];
+      updateChatMessages(currentChatId, finalMessages);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -156,7 +174,9 @@ export function useChats(settings = {}) {
         isError: true
       };
 
-      updateChatMessages(currentChatId, errorMessage);
+      // Cập nhật với user message và error message
+      const finalMessages = [...messagesWithUser, errorMessage];
+      updateChatMessages(currentChatId, finalMessages);
     } finally {
       setIsLoading(false);
     }

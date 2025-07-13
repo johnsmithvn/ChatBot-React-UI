@@ -175,12 +175,22 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={handleCancel}>
-            Cancel
-          </button>
-          <button className="btn btn-primary" onClick={handleSave}>
-            💾 Save Settings
-          </button>
+          <div className="footer-buttons">
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleCancel}
+              type="button"
+            >
+              ❌ Cancel
+            </button>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSave}
+              type="button"
+            >
+              💾 Save Settings
+            </button>
+          </div>
         </div>
       </div>
     </div>
