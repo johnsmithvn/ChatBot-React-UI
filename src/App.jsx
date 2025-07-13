@@ -200,7 +200,7 @@ function App() {
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
                     isBotMessage(msg)
-                      ? "bg-green-100 text-right"
+                      ? "bg-green-100 text-left"
                       : "bg-blue-100 text-left"
                   }`}
                 >
