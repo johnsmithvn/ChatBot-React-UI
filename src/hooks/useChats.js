@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { generateChatTitle } from '../utils/helpers';
+import { generateChatTitle, limitMessagesByTokens, calculateTotalTokens } from '../utils/helpers';
 import { OpenAIService } from '../services/openai';
 
 /**
@@ -138,13 +138,20 @@ export function useChats(settings = {}) {
     updateChatMessages(currentChatId, messagesWithUser);
 
     try {
+      // Giới hạn context theo token limit
+      const contextTokens = settings.contextTokens || 10000;
+      const limitedMessages = limitMessagesByTokens(messagesWithUser, contextTokens);
+      
+      console.log(`📊 Context limiting: ${messagesWithUser.length} → ${limitedMessages.length} messages`);
+      console.log(`🧠 Total tokens: ${calculateTotalTokens(limitedMessages)}`);
+      
       // Chuẩn bị messages cho API
-      const messagesForAPI = messagesWithUser.map(msg => ({
+      const messagesForAPI = limitedMessages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      console.log('All messages for API:', messagesForAPI);
+      console.log('Limited messages for API:', messagesForAPI);
 
       // Gọi OpenAI API
       const openaiService = new OpenAIService(apiKey);

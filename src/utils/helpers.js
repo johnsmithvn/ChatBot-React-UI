@@ -293,3 +293,124 @@ export function parseErrorMessage(error) {
   // Return original message or fallback
   return error.message || 'An unexpected error occurred. Please try again.';
 }
+
+/**
+ * Ước tính số tokens trong text
+ * @param {string} text - Text cần ước tính
+ * @returns {number} - Số tokens ước tính
+ */
+export function estimateTokens(text) {
+  if (!text || typeof text !== 'string') {
+    return 0;
+  }
+  
+  // Rough estimation cho tiếng Việt: 1 token ≈ 2.5 characters
+  // Cho tiếng Anh: 1 token ≈ 4 characters
+  // Sử dụng 3 để balanced
+  return Math.ceil(text.length / 3);
+}
+
+/**
+ * Tính tổng tokens của một array messages
+ * @param {Array} messages - Array messages
+ * @returns {number} - Tổng tokens
+ */
+export function calculateTotalTokens(messages) {
+  if (!Array.isArray(messages)) {
+    return 0;
+  }
+  
+  return messages.reduce((total, message) => {
+    return total + estimateTokens(message.content || '');
+  }, 0);
+}
+
+/**
+ * Giới hạn messages theo token limit
+ * @param {Array} messages - Array messages
+ * @param {number} maxTokens - Giới hạn tokens
+ * @returns {Array} - Messages đã được giới hạn
+ */
+export function limitMessagesByTokens(messages, maxTokens = CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return messages;
+  }
+  
+  // Validate maxTokens
+  if (maxTokens < CHAT_SETTINGS.MIN_CONTEXT_TOKENS) {
+    maxTokens = CHAT_SETTINGS.MIN_CONTEXT_TOKENS;
+  }
+  
+  if (maxTokens > CHAT_SETTINGS.MAX_CONTEXT_TOKENS) {
+    maxTokens = CHAT_SETTINGS.MAX_CONTEXT_TOKENS;
+  }
+  
+  let totalTokens = 0;
+  const limitedMessages = [];
+  
+  // Đi từ cuối lên đầu để giữ lại messages gần nhất
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    const messageTokens = estimateTokens(message.content || '');
+    
+    // Kiểm tra nếu thêm message này có vượt quá limit không
+    if (totalTokens + messageTokens > maxTokens) {
+      // Nếu chưa có message nào và message đầu tiên đã vượt quá limit
+      if (limitedMessages.length === 0) {
+        // Truncate message content để fit
+        const maxContentLength = Math.floor(maxTokens * 3); // Reverse của estimateTokens
+        const truncatedContent = message.content.substring(0, maxContentLength) + '...';
+        limitedMessages.unshift({
+          ...message,
+          content: truncatedContent
+        });
+      }
+      break;
+    }
+    
+    totalTokens += messageTokens;
+    limitedMessages.unshift(message);
+  }
+  
+  return limitedMessages;
+}
+
+/**
+ * Validate context tokens input
+ * @param {number|string} value - Giá trị cần validate
+ * @returns {Object} - { isValid: boolean, value: number, error: string }
+ */
+export function validateContextTokens(value) {
+  // Convert to number
+  const numValue = typeof value === 'string' ? parseInt(value.trim(), 10) : value;
+  
+  if (isNaN(numValue)) {
+    return {
+      isValid: false,
+      value: CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS,
+      error: 'Vui lòng nhập số hợp lệ'
+    };
+  }
+  
+  if (numValue < CHAT_SETTINGS.MIN_CONTEXT_TOKENS) {
+    return {
+      isValid: false,
+      value: CHAT_SETTINGS.MIN_CONTEXT_TOKENS,
+      error: `Tối thiểu ${CHAT_SETTINGS.MIN_CONTEXT_TOKENS.toLocaleString()} tokens`
+    };
+  }
+  
+  if (numValue > CHAT_SETTINGS.MAX_CONTEXT_TOKENS) {
+    return {
+      isValid: false,
+      value: CHAT_SETTINGS.MAX_CONTEXT_TOKENS,
+      error: `Tối đa ${CHAT_SETTINGS.MAX_CONTEXT_TOKENS.toLocaleString()} tokens`
+    };
+  }
+  
+  return {
+    isValid: true,
+    value: numValue,
+    error: null
+  };
+}

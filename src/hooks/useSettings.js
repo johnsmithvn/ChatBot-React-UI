@@ -1,6 +1,6 @@
 import { useLocalStorage } from './useLocalStorage';
 import { useCallback } from 'react';
-import { MODELS, API_CONFIG } from '../utils/constants';
+import { MODELS, API_CONFIG, CHAT_SETTINGS } from '../utils/constants';
 
 /**
  * Hook quản lý settings của ứng dụng
@@ -25,6 +25,7 @@ export function useSettings() {
     // Advanced Settings
     temperature: 0.7,
     maxTokens: 1000,
+    contextTokens: CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS,
     systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
 
 🎯 **Quy tắc định dạng:**

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
+import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { useChats } from './hooks/useChats';
 import { useSettings } from './hooks/useSettings';
 import ReactMarkdown from 'react-markdown';
@@ -91,6 +92,14 @@ function App() {
                   🤖 {settings.model}
                 </span>
               </div>
+            </div>
+
+            {/* Token Usage */}
+            <div className="token-usage-container">
+              <TokenUsage 
+                messages={currentChat.messages} 
+                contextTokens={settings.contextTokens}
+              />
             </div>
 
             {/* Messages Area */}

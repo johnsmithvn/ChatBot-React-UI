@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { MODELS } from '../../utils/constants';
+import { MODELS, CHAT_SETTINGS } from '../../utils/constants';
+import { validateContextTokens } from '../../utils/helpers';
 
 export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
   const [tempSettings, setTempSettings] = useState(settings);
@@ -136,6 +137,28 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
               />
               <small className="form-hint">
                 📝 Độ dài tối đa của phản hồi
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="contextTokens">Context Tokens</label>
+              <input
+                id="contextTokens"
+                type="number"
+                min={CHAT_SETTINGS.MIN_CONTEXT_TOKENS}
+                max={CHAT_SETTINGS.MAX_CONTEXT_TOKENS}
+                value={tempSettings.contextTokens || CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS}
+                onChange={(e) => {
+                  const validation = validateContextTokens(e.target.value);
+                  setTempSettings({
+                    ...tempSettings,
+                    contextTokens: validation.value
+                  });
+                }}
+                className="form-input"
+              />
+              <small className="form-hint">
+                🧠 Số tokens tối đa cho context (bao gồm lịch sử chat)
               </small>
             </div>
           </div>

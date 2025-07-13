@@ -78,6 +78,9 @@ export const CHAT_SETTINGS = {
   MAX_MESSAGE_LENGTH: 4000,
   MAX_CHATS: 100,
   MAX_MESSAGES_PER_CHAT: 1000,
+  DEFAULT_CONTEXT_TOKENS: 10000, // Default context window limit
+  MIN_CONTEXT_TOKENS: 1000, // Minimum context tokens
+  MAX_CONTEXT_TOKENS: 100000, // Maximum context tokens (based on model limits)
   AUTO_SAVE_INTERVAL: 5000, // 5 seconds
   TYPING_INDICATOR_DELAY: 500 // 0.5 second
 };
