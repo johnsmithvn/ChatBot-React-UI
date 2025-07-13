@@ -1,286 +1,270 @@
-import { useEffect, useRef, useState } from "react";
-import CryptoJS from "crypto-js";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
-
-const secretKey = import.meta.env.VITE_ENCRYPTION_SECRET;
-const envApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-const encryptedKey = localStorage.getItem("user_api_key");
-const userApiKey = encryptedKey ? decryptKey(encryptedKey) : null;
-
-function encryptKey(rawKey) {
-  return CryptoJS.AES.encrypt(rawKey, secretKey).toString();
-}
-
-function decryptKey(encryptedKey) {
-  try {
-    const bytes = CryptoJS.AES.decrypt(encryptedKey, secretKey);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch (e) {
-    console.error("Không giải mã được API key:", e);
-    return null;
-  }
-}
-
-function isBotMessage(msg) {
-  return msg.role === "assistant";
-}
-
-// System message chung cho cả OpenAI và Local Model
-const SYSTEM_MESSAGE = {
-  role: "system",
-  content: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
-
-🎯 **Quy tắc định dạng:**
-- Sử dụng **bold** cho từ khóa quan trọng
-- Sử dụng \`inline code\` cho tên function, variable, command
-- Sử dụng \`\`\`language cho code blocks với ngôn ngữ cụ thể
-- Sử dụng ## cho headers chính, ### cho sub-headers  
-- Sử dụng - hoặc 1. cho lists
-- Sử dụng > cho blockquotes khi cần nhấn mạnh
-- Sử dụng | | cho tables khi trình bày data
-
-📝 **Ví dụ format tốt:**
-## Giải pháp
-Để tạo **function tính giai thừa**, bạn có thể sử dụng:
-
-### Cách 1: Đệ quy
-\`\`\`javascript
-function factorial(n) {
-  if (n <= 1) return 1;
-  return n * factorial(n - 1);
-}
-\`\`\`
-
-### Cách 2: Vòng lặp  
-\`\`\`javascript
-function factorial(n) {
-  let result = 1;
-  for (let i = 2; i <= n; i++) {
-    result *= i;
-  }
-  return result;
-}
-\`\`\`
-
-Hãy luôn format đẹp để dễ đọc!`
-};
-
-// 🧠 Gọi LM Studio
-async function callLocalModel(chatHistory, userMessage) {
-  const model = "local-model-name"; // Đổi thành tên model local thật sự
-
-  const messages = [SYSTEM_MESSAGE, ...chatHistory, userMessage];
-  if (!messages.length) throw new Error("🛑 Không có message để gửi!");
-
-  const res = await fetch("/api/local/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages }),
-  });
-
-  const data = await res.json();
-  if (!data.choices || !data.choices[0]) {
-    throw new Error("❌ Phản hồi từ LM Studio không hợp lệ");
-  }
-
-  return data.choices[0].message.content;
-}
-
-// 🌐 Gọi OpenAI
-async function callOpenAI(chatHistory, userMessage) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${userApiKey || envApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [SYSTEM_MESSAGE, ...chatHistory, userMessage],
-    }),
-  });
-  const data = await res.json();
-  return (
-    data.choices?.[0]?.message?.content || "❌ Không có phản hồi từ OpenAI."
-  );
-}
+import { useEffect, useState } from 'react';
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { SettingsModal } from './components/Settings/SettingsModal';
+import { useChats } from './hooks/useChats';
+import { useSettings } from './hooks/useSettings';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 function App() {
-  const [message, setMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
-  const [useLocalModel, setUseLocalModel] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Custom hooks
+  const { settings, updateSetting } = useSettings();
+  
+  const {
+    chats,
+    currentChat,
+    currentChatId,
+    isLoading,
+    createNewChat,
+    selectChat,
+    deleteChat,
+    renameChat,
+    sendMessage,
+    initializeFirstChat
+  } = useChats(settings);
 
-  const submitForm = async (e) => {
+  // Khởi tạo chat đầu tiên nếu cần
+  useEffect(() => {
+    initializeFirstChat();
+  }, [initializeFirstChat]);
+
+  // Toggle sidebar
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(prev => !prev);
+    updateSetting('sidebarCollapsed', !sidebarCollapsed);
+  };
+
+  // Chat input state
+  const [message, setMessage] = useState('');
+
+  // Handle send message
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isLoading) return;
 
-    const userMessage = { role: "user", content: message };
-    const thinkingMsg = {
-      role: "assistant",
-      content: "🤖 Đang nghĩ trả lời...",
-    };
+    const messageToSend = message.trim();
+    setMessage('');
+    
+    await sendMessage(messageToSend);
+  };
 
-    setChatHistory((prev) => [...prev, userMessage, thinkingMsg]);
-    setMessage("");
-
-    try {
-      const responseText = useLocalModel
-        ? await callLocalModel(chatHistory, userMessage)
-        : await callOpenAI(chatHistory, userMessage);
-
-      const botMessage = { role: "assistant", content: responseText };
-      setChatHistory((prev) => [...prev.slice(0, -1), botMessage]); // remove thinkingMsg
-    } catch (err) {
-      console.error("❌ Gọi API lỗi:", err);
-      setChatHistory((prev) => [
-        ...prev.slice(0, -1),
-        {
-          role: "assistant",
-          content:
-            "❌ Không kết nối được model. Kiểm tra lại API hoặc local server.",
-        },
-      ]);
+  // Handle input keypress
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
     }
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory]);
-
   return (
-    <div className="min-h-screen flex items-start justify-center bg-gray-100 px-4 py-8">
-      <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-screen-xl flex flex-col">
-        <h1 className="text-3xl font-bold mb-2 text-center">💬 Chat với GPT</h1>
-       <div className="text-xs text-center text-gray-500 mb-4 space-y-1">
-  <p>
-    Đang dùng:{" "}
-    <span className="font-mono bg-gray-200 px-2 py-1 rounded">
-      {useLocalModel
-        ? "Local Model (LM Studio)"
-        : userApiKey
-        ? "User Key (🔐)"
-        : "ENV Key"}
-    </span>
-  </p>
-  <p>
-    🧠 Hệ thống đang sử dụng:{" "}
-    <span className="font-mono bg-yellow-100 px-2 py-1 rounded text-gray-800">
-      {useLocalModel
-        ? "⚡ Local Model từ LM Studio"
-        : userApiKey
-        ? "🔐 OpenAI (User Key)"
-        : "🌐 OpenAI (ENV Key)"}
-    </span>
-  </p>
-</div>
+    <div className="app-container">
+      {/* Sidebar */}
+      <Sidebar
+        chats={chats}
+        currentChatId={currentChatId}
+        onNewChat={createNewChat}
+        onSelectChat={selectChat}
+        onDeleteChat={deleteChat}
+        onRenameChat={renameChat}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
+        onSettingsClick={() => setShowSettings(true)}
+      />
 
+      {/* Main Chat Area */}
+      <div className="main-area">
+        {currentChat ? (
+          <>
+            {/* Chat Header */}
+            <div className="chat-header">
+              <h2 className="chat-title">{currentChat.title}</h2>
+              <div className="chat-info">
+                <span className="message-count">
+                  {currentChat.messages?.length || 0} messages
+                </span>
+                <span className="model-info">
+                  🤖 {settings.model}
+                </span>
+              </div>
+            </div>
 
-        <div className="flex justify-center flex-wrap gap-4 mb-4 text-sm">
-          <button
-            onClick={() => {
-              const newKey = prompt("Nhập OpenAI API Key của bạn:");
-              if (newKey) {
-                localStorage.setItem("user_api_key", encryptKey(newKey));
-                window.location.reload();
-              }
-            }}
-            className="text-blue-600 underline"
-          >
-            Nhập key thủ công
-          </button>
-          <button
-            onClick={() => {
-              localStorage.removeItem("user_api_key");
-              window.location.reload();
-            }}
-            className="text-red-600 underline"
-          >
-            Dùng lại key mặc định
-          </button>
-          <button
-            onClick={() => setUseLocalModel((prev) => !prev)}
-            className="text-purple-600 underline"
-          >
-            Chuyển sang {useLocalModel ? "OpenAI" : "Local Model"}
-          </button>
-        </div>
-
-        <form onSubmit={submitForm} className="flex mb-4 w-full">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Nhập tin nhắn..."
-            className="flex-grow p-2 border border-gray-300 rounded-l"
-          />
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600"
-          >
-            Gửi
-          </button>
-        </form>
-
-        {/* Scrollable Chat Box */}
-        <div className="flex-grow overflow-hidden">
-          <div
-            className="overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"
-            style={{
-              maxHeight: "calc(100vh - 300px)", // Chiếm gần full màn
-              minHeight: "400px", // Đảm bảo tối thiểu nhìn rõ
-            }}
-          >
-            {chatHistory.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex items-start gap-3 ${
-                  isBotMessage(msg) ? "justify-start" : "justify-end"
-                }`}
-              >
-                {isBotMessage(msg) && (
-                  <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    🤖
-                  </div>
-                )}
-                <div
-                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
-                    isBotMessage(msg)
-                      ? "bg-gray-50 text-left border border-gray-200 shadow-sm"
-                      : "bg-blue-600 text-white text-left"
-                  }`}
-                >
-                  {!isBotMessage(msg) && (
-                    <p className="font-semibold text-xs text-blue-200 mb-1">
-                      👤 Bạn
-                    </p>
-                  )}
-                  {isBotMessage(msg) ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
+            {/* Messages Area */}
+            <div className="messages-area">
+              <div className="messages-container">
+                {currentChat.messages?.length === 0 ? (
+                  <div className="empty-chat">
+                    <div className="empty-chat-content">
+                      <h3>👋 Start a conversation</h3>
+                      <p>Type a message below to get started!</p>
                     </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  )}
-                </div>
-                {!isBotMessage(msg) && (
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    👤
+                  </div>
+                ) : (
+                  currentChat.messages?.map((msg, index) => (
+                    <div
+                      key={msg.id || index}
+                      className={`message-container ${
+                        msg.role === 'assistant' ? 'assistant' : 'user'
+                      }`}
+                    >
+                      {msg.role === 'assistant' && (
+                        <div className="message-avatar">
+                          <span className="avatar-icon">🤖</span>
+                        </div>
+                      )}
+
+                      <div className={`message-bubble ${msg.role}`}>
+                        {msg.role === 'assistant' ? (
+                          <div className="markdown-content">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                code({ inline, className, children, ...props }) {
+                                  const match = /language-(\w+)/.exec(className || '');
+                                  return !inline && match ? (
+                                    <SyntaxHighlighter
+                                      style={oneDark}
+                                      language={match[1]}
+                                      PreTag="div"
+                                      {...props}
+                                    >
+                                      {String(children).replace(/\n$/, '')}
+                                    </SyntaxHighlighter>
+                                  ) : (
+                                    <code className={className} {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                }
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="message-text">{msg.content}</p>
+                        )}
+                        
+                        {settings.showTimestamps && (
+                          <div className="message-timestamp">
+                            {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {msg.role === 'user' && (
+                        <div className="message-avatar">
+                          <span className="avatar-icon">👤</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {/* Loading indicator */}
+                {isLoading && (
+                  <div className="message-container assistant">
+                    <div className="message-avatar">
+                      <span className="avatar-icon">🤖</span>
+                    </div>
+                    <div className="message-bubble assistant loading">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-            ))}
-            <div ref={messagesEndRef} />
+            </div>
+
+            {/* Chat Input */}
+            <div className="chat-input-area">
+              <form onSubmit={handleSendMessage} className="chat-input-form">
+                <div className="input-container">
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                    className="message-input"
+                    disabled={isLoading}
+                    rows={1}
+                    onInput={(e) => {
+                      // Auto-resize textarea
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                    }}
+                  />
+                  
+                  <button 
+                    type="submit"
+                    disabled={!message.trim() || isLoading}
+                    className="send-button"
+                    title="Send message"
+                  >
+                    {isLoading ? '⏳' : '📤'}
+                  </button>
+                </div>
+                
+                <div className="input-footer">
+                  <div className="input-hints">
+                    <span className="hint">💡 Press Shift+Enter for new line</span>
+                    <span className="char-count">
+                      {message.length}/4000
+                    </span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </>
+        ) : (
+          /* No chat selected */
+          <div className="no-chat-selected">
+            <div className="welcome-content">
+              <h1>💬 Welcome to ChatBot</h1>
+              <p>Select a chat from the sidebar or create a new one to get started</p>
+              <button 
+                onClick={createNewChat}
+                className="welcome-button"
+              >
+                ➕ Start New Chat
+              </button>
+              
+              <div className="welcome-features">
+                <div className="feature">
+                  <span className="feature-icon">🤖</span>
+                  <span className="feature-text">AI-powered conversations</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📝</span>
+                  <span className="feature-text">Markdown support</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">💾</span>
+                  <span className="feature-text">Auto-save chat history</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={settings}
+        onUpdateSetting={updateSetting}
+      />
     </div>
   );
 }
