@@ -21,12 +21,26 @@ export function useLocalStorage(key, initialValue) {
   // Hàm để set giá trị mới
   const setValue = (value) => {
     try {
+      // Determine the new value to store
       const valueToStore = value instanceof Function ? value(storedValue) : value;
-      console.log(`📝 localStorage setValue "${key}":`, { old: storedValue, new: valueToStore });
+      
+      console.log(`📝 localStorage setValue "${key}":`, { 
+        old: storedValue, 
+        new: valueToStore,
+        valueIsFunction: value instanceof Function 
+      });
+      
+      // Update state and localStorage
       setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      
+      // Make sure we're storing a JSON-serializable value
+      const jsonValue = JSON.stringify(valueToStore);
+      window.localStorage.setItem(key, jsonValue);
+      
+      console.log(`✅ localStorage value saved for "${key}"`);
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
+      console.error("Value that caused error:", value);
     }
   };
 

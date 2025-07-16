@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MODELS, CHAT_SETTINGS } from '../../utils/constants';
 import { validateContextTokens } from '../../utils/helpers';
 
 export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
-  const [tempSettings, setTempSettings] = useState(settings);
+  const [tempSettings, setTempSettings] = useState({...settings});
+  
+  // Update tempSettings when settings change or modal opens
+  useEffect(() => {
+    if (isOpen && settings) {
+      console.log("SettingsModal: Updating tempSettings with", settings);
+      setTempSettings({...settings});
+    }
+  }, [isOpen, settings]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
+    // Log the settings before saving
+    console.log("SettingsModal: Saving settings", { tempSettings, currentSettings: settings });
+    
     // Cập nhật từng setting
     Object.keys(tempSettings).forEach(key => {
-      if (tempSettings[key] !== settings[key]) {
+      if (JSON.stringify(tempSettings[key]) !== JSON.stringify(settings[key])) {
+        console.log(`SettingsModal: Updating setting ${key}`, { 
+          oldValue: settings[key], 
+          newValue: tempSettings[key] 
+        });
         onUpdateSetting(key, tempSettings[key]);
       }
     });
@@ -22,9 +37,43 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
     onClose();
   };
 
+  console.log('SettingsModal: Rendered with isOpen =', isOpen, 'settings =', settings);
   return (
-    <div className="modal-overlay" onClick={handleCancel}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <div
+      className="modal-overlay"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000,
+        background: 'rgba(0,0,0,0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleCancel();
+        }
+      }}
+    >
+      <div
+        className="modal-content"
+        style={{
+          position: 'relative',
+          zIndex: 1010,
+          minWidth: 400,
+          minHeight: 200,
+          padding: 24,
+          background: '#fff',
+          borderRadius: 8,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          border: '2px solid #007aff',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h2>⚙️ Settings</h2>
           <button className="modal-close" onClick={handleCancel}>

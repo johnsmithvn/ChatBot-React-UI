@@ -121,7 +121,10 @@ function App() {
         onRenameChat={updateChatTitle}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={handleToggleSidebar}
-        onSettingsClick={() => setShowSettings(true)}
+        onSettingsClick={() => {
+          console.log("Settings button clicked, current state:", showSettings);
+          setShowSettings(true);
+        }}
         onWorkspaceClick={() => setShowWorkspaceManager(true)}
         onTemplateClick={() => setShowTemplateManager(true)}
         // Workspace props
@@ -132,7 +135,7 @@ function App() {
       />
 
       {/* Main Chat Area */}
-      <div className="main-area">
+      <div className="main-area" style={{ minHeight: 500, background: '#fff', borderRadius: 8, margin: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         {(() => {
           console.log('📊 Main area render - currentChat:', currentChat);
           console.log('📊 Main area render - currentChatId:', currentChatId);
@@ -170,8 +173,8 @@ function App() {
             </div>
 
             {/* Messages Area */}
-            <div className="messages-area">
-              <div className="messages-container">
+            <div className="messages-area" style={{ minHeight: 300, padding: 16, background: '#f9f9f9', borderRadius: 8 }}>
+              <div className="messages-container" style={{ minHeight: 200 }}>
                 {(() => {
                   console.log('🖥️ UI Render - currentChat:', currentChat);
                   console.log('🖥️ UI Render - messages:', currentChat?.messages);
@@ -359,7 +362,7 @@ function App() {
         )}
       </div>
 
-      {/* Settings Modal */}
+      {/* Settings Modal luôn render cùng cấp với app, không che mất các thành phần khác */}
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
@@ -369,8 +372,22 @@ function App() {
 
       {/* Workspace Manager Modal */}
       {showWorkspaceManager && (
-        <div className="modal-overlay">
-          <div className="modal-content large">
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1000,
+            background: 'rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div className="modal-content large" style={{ position: 'relative', zIndex: 1010, minWidth: 500, minHeight: 300, background: '#fff', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', border: '2px solid #007aff', padding: 24 }}>
             <div className="modal-header">
               <h3>🏢 Workspace Manager</h3>
               <button className="modal-close" onClick={() => setShowWorkspaceManager(false)}>✕</button>
@@ -391,8 +408,22 @@ function App() {
 
       {/* Template Manager Modal */}
       {showTemplateManager && (
-        <div className="modal-overlay">
-          <div className="modal-content large">
+        <div
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1000,
+            background: 'rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div className="modal-content large" style={{ position: 'relative', zIndex: 1010, minWidth: 500, minHeight: 300, background: '#fff', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', border: '2px solid #007aff', padding: 24 }}>
             <div className="modal-header">
               <h3>📋 Template Manager</h3>
               <button className="modal-close" onClick={() => setShowTemplateManager(false)}>✕</button>
