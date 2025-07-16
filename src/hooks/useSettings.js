@@ -106,10 +106,17 @@ Hãy luôn format đẹp để dễ đọc!`
    * Lấy API key hiện tại (từ settings hoặc env)
    */
   const getApiKey = useCallback(() => {
-    if (!settings.useCustomApiKey) {
-      return import.meta.env.VITE_OPENAI_API_KEY || '';
+    // Ưu tiên API key do user nhập
+    if (settings.useCustomApiKey && settings.apiKey && settings.apiKey.startsWith(API_CONFIG.API_KEY_PREFIX)) {
+      return settings.apiKey;
     }
-    return settings.apiKey || '';
+    // Fallback sang biến môi trường
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_OPENAI_API_KEY) {
+      return import.meta.env.VITE_OPENAI_API_KEY;
+    }
+    // Nếu không có, log cảnh báo
+    console.warn('⚠️ Không tìm thấy OpenAI API key!');
+    return '';
   }, [settings.apiKey, settings.useCustomApiKey]);
 
   return {

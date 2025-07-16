@@ -199,7 +199,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
             ...chat,
             messages: newMessages,
             updatedAt: new Date().toISOString(),
-            title: chat.title === 'New Chat' ? generateChatTitle(newMessages) : chat.title
+            title: chat.title === 'New Chat' ? generateChatTitle(newMessages[0]?.content) : chat.title
           };
         }
         return chat;

@@ -50,10 +50,10 @@ function App() {
     sendMessage,
     // Message actions
     regenerateResponse,
-    editMessage,
-    branchMessage,
+    
+    
     deleteMessage,
-    bookmarkMessage
+    
   } = useChats(settings, currentWorkspace?.id, currentWorkspace);
 
   // Khởi tạo workspace mặc định
@@ -187,72 +187,66 @@ function App() {
                   </div>
                 ) : (
                   currentChat.messages?.map((msg, index) => (
-                    <div
-                      key={msg.id || index}
-                      className={`message-container ${
-                        msg.role === 'assistant' ? 'assistant' : 'user'
-                      }`}
-                    >
-                      {msg.role === 'assistant' && (
-                        <div className="message-avatar">
-                          <span className="avatar-icon">🤖</span>
-                        </div>
-                      )}
-
-                      <div className={`message-bubble ${msg.role}`}>
-                        {msg.role === 'assistant' ? (
-                          <div className="markdown-content">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              components={{
-                                code({ inline, className, children, ...props }) {
-                                  const match = /language-(\w+)/.exec(className || '');
-                                  return !inline && match ? (
-                                    <SyntaxHighlighter
-                                      style={oneDark}
-                                      language={match[1]}
-                                      PreTag="div"
-                                      {...props}
-                                    >
-                                      {String(children).replace(/\n$/, '')}
-                                    </SyntaxHighlighter>
-                                  ) : (
-                                    <code className={className} {...props}>
-                                      {children}
-                                    </code>
-                                  );
-                                }
-                              }}
-                            >
-                              {msg.content}
-                            </ReactMarkdown>
+                    <div key={msg.id || index} className="message-wrapper">
+                      <div
+                        className={`message-container ${
+                          msg.role === 'assistant' ? 'assistant' : 'user'
+                        }`}
+                      >
+                        {msg.role === 'assistant' && (
+                          <div className="message-avatar">
+                            <span className="avatar-icon">🤖</span>
                           </div>
-                        ) : (
-                          <p className="message-text">{msg.content}</p>
                         )}
-                        
-                        {/* Message Actions */}
+
+                        {msg.role === 'user' && (
+                          <div className="message-avatar">
+                            <span className="avatar-icon">👤</span>
+                          </div>
+                        )}
+
+                        <div className={`message-bubble ${msg.role}`}>
+                          {msg.role === 'assistant' ? (
+                            <div className="markdown-content">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  code({ inline, className, children, ...props }) {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    return !inline && match ? (
+                                      <SyntaxHighlighter
+                                        style={oneDark}
+                                        language={match[1]}
+                                        PreTag="div"
+                                        {...props}
+                                      >
+                                        {String(children).replace(/\n$/, '')}
+                                      </SyntaxHighlighter>
+                                    ) : (
+                                      <code className={className} {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  }
+                                }}
+                              >
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="message-text">{msg.content}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Message Actions và Timestamp dưới message container */}
+                      <div className={`message-actions-inline-wrapper ${msg.role}`}> 
                         <MessageActions
                           message={msg}
-                          onCopy={() => {
-                            navigator.clipboard.writeText(msg.content);
-                          }}
                           onRegenerate={(message) => {
                             const messageIndex = currentChat.messages.findIndex(msg => msg.id === message.id);
                             if (messageIndex !== -1) {
                               regenerateResponse(currentChatId, messageIndex);
-                            }
-                          }}
-                          onEdit={(message) => {
-                            const newContent = prompt('Edit message:', message.content);
-                            if (newContent && newContent !== message.content) {
-                              editMessage(currentChatId, message.id, newContent);
-                            }
-                          }}
-                          onBranch={(message) => {
-                            const messageIndex = currentChat.messages.findIndex(msg => msg.id === message.id);
-                            if (messageIndex !== -1) {
-                              branchMessage(currentChatId, messageIndex);
                             }
                           }}
                           onDelete={(message) => {
@@ -260,26 +254,17 @@ function App() {
                               deleteMessage(currentChatId, message.id);
                             }
                           }}
-                          onBookmark={(message) => {
-                            bookmarkMessage(currentChatId, message.id);
-                          }}
                         />
-                      </div>
                         
-                      {settings.showTimestamps && (
-                        <div className="message-timestamp">
-                          {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      )}
-
-                      {msg.role === 'user' && (
-                        <div className="message-avatar">
-                          <span className="avatar-icon">👤</span>
-                        </div>
-                      )}
+                        {settings.showTimestamps && (
+                          <div className="message-timestamp">
+                            {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}

@@ -128,8 +128,7 @@ export function WorkspaceSection({
       {/* Chats List */}
       <div className="workspace-chats">
         <div className="section-header">
-          <h4 className="section-title">💬 Chats</h4>
-          <span className="section-count">({chats.length})</span>
+          <h4 className="section-title">💬 Chats ({chats.length})</h4>
         </div>
         
         <div className="chats-list">
