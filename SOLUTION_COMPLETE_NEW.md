@@ -12,20 +12,25 @@
 
 - ✅ Chats giờ được lưu theo workspace: `workspace_chats[workspaceId]`
 - ✅ Khi đổi workspace → chỉ thấy chats của workspace đó
-- ✅ Chats được tổ chức theo workspace
+- ✅ Groups organize chats trong workspace
+- ✅ Tự động expand groups có chats
 - ✅ Performance optimization với React.memo, useMemo, useCallback
 
 ## 🏗️ Cấu trúc mới
 
-```text
+```
 📁 Workspace A
-├──  Chat 1
-├── 💬 Chat 2
-└── 💬 Chat 3
+├── 📂 Group 1
+│   ├── 💬 Chat 1
+│   └── 💬 Chat 2
+├── 📂 Group 2
+│   └── 💬 Chat 3
+└── 💬 Ungrouped Chat
 
 📁 Workspace B  
-├── 💬 Chat 4
-└── 💬 Chat 5
+├── 📂 Group 3
+│   └── 💬 Chat 4
+└── 💬 Ungrouped Chat 2
 ```
 
 ## 🔧 Files đã được sửa đổi
@@ -44,7 +49,7 @@
 
 ### 3. `src/components/Sidebar/WorkspaceSection.jsx` - Enhanced
 
-- Hiển thị danh sách chats theo workspace
+- Thêm auto-expand groups với chats
 - Tối ưu performance với useCallback, useMemo
 - Thêm WorkspaceInfo modal
 - Memoized ChatItem component
@@ -93,11 +98,14 @@
 [
   {
     "id": "default",
-    "name": "Default Workspace"
-  },
-  {
-    "id": "workspace_test",
-    "name": "Test Workspace"
+    "name": "Default Workspace",
+    "groups": [
+      {
+        "id": "group_1",
+        "name": "General",
+        "chatIds": ["chat_1"]
+      }
+    ]
   }
 ]
 ```
@@ -114,8 +122,9 @@
 
 - Tạo workspace mới → chats cũ biến mất
 - Đổi workspace → chỉ thấy chats của workspace đó
-- Chats hiển thị theo workspace
-- Chats được sắp xếp theo thời gian cập nhật
+- Groups tự động expand khi có chats
+- Chats trong groups hiển thị đúng
+- Ungrouped chats hiển thị riêng
 
 ## 🚀 Performance Optimizations
 
@@ -165,76 +174,17 @@ http://localhost:5173
 - `WORKSPACE_EXPLANATION.md` - Giải thích workspace system
 - `test-guide.html` - Interactive test guide
 
-## 📋 Template System - Hướng dẫn sử dụng
-
-### Template là gì?
-
-Template là những prompt có sẵn với các biến (variables) để bạn có thể tái sử dụng. Thay vì phải viết lại prompt dài, bạn chỉ cần điền vào các biến.
-
-### Cách sử dụng Template
-
-#### 1. Mở Template Manager
-
-- Click vào nút "📋 Templates" ở footer sidebar
-- Sẽ hiện modal Template Manager
-
-#### 2. Chọn Template có sẵn
-
-- **💻 Code Assistant**: Giúp viết code với variables `{{language}}`, `{{framework}}`, `{{requirement}}`
-- **🌍 Translator**: Dịch thuật với variables `{{source_language}}`, `{{target_language}}`, `{{content}}`
-- **✍️ Creative Writer**: Viết sáng tạo với variables `{{genre}}`, `{{length}}`, `{{audience}}`
-- **📊 Teacher**: Giảng dạy với variables `{{subject}}`, `{{level}}`, `{{topic}}`
-
-#### 3. Điền Variables
-
-- Click "Use Template" trên template muốn dùng
-- Điền thông tin vào các ô input:
-  - `language`: "JavaScript", "Python", "Java"...
-  - `framework`: "React", "Django", "Spring"...
-  - `requirement`: "Tạo function validation email"
-
-#### 4. Xem Preview và Use
-
-- Phần "Result" sẽ hiển thị prompt đã được thay thế variables
-- Click "Use Template" để chèn vào ô chat
-
-#### 5. Tạo Template mới
-
-- Click "➕ New Template"
-- Nhập Name, Description, Template content
-- Sử dụng cú pháp `{{variable_name}}` cho variables
-- Ví dụ: `"Hãy giải thích {{concept}} bằng ngôn ngữ {{language}} với level {{level}}"`
-
-### Ví dụ thực tế
-
-```text
-Template: "Viết {{type}} bằng {{language}} để {{task}}"
-Variables:
-- type: "function"
-- language: "JavaScript"  
-- task: "validate email format"
-
-Result: "Viết function bằng JavaScript để validate email format"
-```
-
-### Lợi ích
-
-- ✅ Tiết kiệm thời gian
-- ✅ Prompt nhất quán
-- ✅ Dễ tái sử dụng
-- ✅ Có thể share với team
-
 ## 🎉 Kết luận
 
-### Workspace system giờ đây hoạt động chính xác
+**Workspace system giờ đây hoạt động chính xác:**
 
 - ✅ Chats thuộc về workspace cụ thể
 - ✅ Isolation giữa workspaces
-- ✅ Chats được tổ chức theo workspace
+- ✅ Groups organize chats hiệu quả
 - ✅ UI/UX được cải thiện đáng kể
 - ✅ Performance được tối ưu
 
-### Ready to use! 🚀
+**Ready to use! 🚀**
 
 ---
 

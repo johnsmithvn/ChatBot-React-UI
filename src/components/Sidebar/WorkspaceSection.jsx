@@ -184,17 +184,6 @@ const ChatItem = memo(function ChatItem({ chat, isActive, onSelect, onDelete, on
     }
   };
 
-  // Get last message preview
-  const lastMessage = (chat.messages && chat.messages.length > 0) 
-    ? chat.messages[chat.messages.length - 1]
-    : null;
-
-  const getMessagePreview = () => {
-    if (!lastMessage || !lastMessage.content) return 'No messages yet';
-    const content = lastMessage.content;
-    return content.length > 40 ? content.substring(0, 40) + '...' : content;
-  };
-
   const getTimeAgo = () => {
     if (!chat.updatedAt) return '';
     const now = new Date();
@@ -228,7 +217,6 @@ const ChatItem = memo(function ChatItem({ chat, isActive, onSelect, onDelete, on
             ) : (
               <>
                 <div className="chat-title">{chat.title}</div>
-                <div className="chat-preview">{getMessagePreview()}</div>
               </>
             )}
           </div>
