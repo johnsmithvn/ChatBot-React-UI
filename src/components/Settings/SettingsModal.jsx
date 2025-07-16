@@ -41,18 +41,6 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
   return (
     <div
       className="modal-overlay"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-        background: 'rgba(0,0,0,0.3)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           handleCancel();
@@ -61,17 +49,6 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
     >
       <div
         className="modal-content"
-        style={{
-          position: 'relative',
-          zIndex: 1010,
-          minWidth: 400,
-          minHeight: 200,
-          padding: 24,
-          background: '#fff',
-          borderRadius: 8,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-          border: '2px solid #007aff',
-        }}
         onClick={e => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -249,14 +226,14 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
         <div className="modal-footer">
           <div className="footer-buttons">
             <button 
-              className="btn btn-secondary" 
+              className="modal-btn secondary" 
               onClick={handleCancel}
               type="button"
             >
               ❌ Cancel
             </button>
             <button 
-              className="btn btn-primary" 
+              className="modal-btn primary" 
               onClick={handleSave}
               type="button"
             >

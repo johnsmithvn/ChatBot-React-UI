@@ -372,22 +372,8 @@ function App() {
 
       {/* Workspace Manager Modal */}
       {showWorkspaceManager && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1000,
-            background: 'rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div className="modal-content large" style={{ position: 'relative', zIndex: 1010, minWidth: 500, minHeight: 300, background: '#fff', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', border: '2px solid #007aff', padding: 24 }}>
+        <div className="modal-overlay">
+          <div className="modal-content large">
             <div className="modal-header">
               <h3>🏢 Workspace Manager</h3>
               <button className="modal-close" onClick={() => setShowWorkspaceManager(false)}>✕</button>
@@ -408,22 +394,8 @@ function App() {
 
       {/* Template Manager Modal */}
       {showTemplateManager && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1000,
-            background: 'rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div className="modal-content large" style={{ position: 'relative', zIndex: 1010, minWidth: 500, minHeight: 300, background: '#fff', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', border: '2px solid #007aff', padding: 24 }}>
+        <div className="modal-overlay">
+          <div className="modal-content large">
             <div className="modal-header">
               <h3>📋 Template Manager</h3>
               <button className="modal-close" onClick={() => setShowTemplateManager(false)}>✕</button>
