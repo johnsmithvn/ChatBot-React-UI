@@ -1,10 +1,12 @@
 import { ChatList } from './ChatList';
 import { NewChatButton } from './NewChatButton';
+import { WorkspaceSection } from './WorkspaceSection';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 
 /**
  * Sidebar component - Thanh bên trái chứa danh sách chat và navigation
  */
-export function Sidebar({
+export const Sidebar = memo(function Sidebar({
   chats = [],
   currentChatId,
   onNewChat,
@@ -13,11 +15,64 @@ export function Sidebar({
   onRenameChat,
   isCollapsed = false,
   onToggleCollapse,
-  onSettingsClick
+  onSettingsClick,
+  onWorkspaceClick,
+  onTemplateClick,
+  // Workspace props
+  workspaces = [],
+  currentWorkspace,
+  onSelectWorkspace,
+  onUpdateWorkspacePrompt
 }) {
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef(null);
+
+  // Handle resize với useCallback để tối ưu performance
+  const handleMouseDown = useCallback(() => {
+    setIsResizing(true);
+  }, []);
+
+  // Handle resize
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      
+      const newWidth = e.clientX;
+      if (newWidth >= 250 && newWidth <= 600) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div 
+      ref={sidebarRef}
+      className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
+      style={{ width: isCollapsed ? '60px' : `${sidebarWidth}px` }}
+    >
+      {/* Resize Handle */}
+      {!isCollapsed && (
+        <div 
+          className="sidebar-resize-handle"
+          onMouseDown={handleMouseDown}
+        />
+      )}
+      
       {/* Header */}
       <div className="sidebar-header">
         <button 
@@ -34,45 +89,61 @@ export function Sidebar({
         )}
       </div>
 
-      {/* New Chat Button */}
       {!isCollapsed && (
-        <div className="sidebar-section">
-          <NewChatButton onClick={onNewChat} />
-        </div>
-      )}
+        <>
+          {/* New Chat Button - Fixed at top */}
+          <div className="sidebar-new-chat">
+            <NewChatButton onClick={onNewChat} />
+          </div>
 
-      {/* Chat List */}
-      <div className="sidebar-section sidebar-main">
-        <ChatList 
-          chats={chats}
-          currentChatId={currentChatId}
-          onSelectChat={onSelectChat}
-          onDeleteChat={onDeleteChat}
-          onRenameChat={onRenameChat}
-          isCollapsed={isCollapsed}
-        />
-      </div>
+          {/* Workspace Section - Collapsible */}
+          <div className="sidebar-workspace">
+            <WorkspaceSection
+              workspaces={workspaces}
+              currentWorkspace={currentWorkspace}
+              onSelectWorkspace={onSelectWorkspace}
+              chats={chats}
+              currentChatId={currentChatId}
+              onSelectChat={onSelectChat}
+              onDeleteChat={onDeleteChat}
+              onRenameChat={onRenameChat}
+              onUpdateWorkspacePrompt={onUpdateWorkspacePrompt}
+            />
+          </div>
+        </>
+      )}
 
       {/* Footer */}
       <div className="sidebar-footer">
+        {!isCollapsed && (
+          <>
+            <button 
+              onClick={onWorkspaceClick}
+              className="footer-button workspace-button"
+              title="Workspace Manager"
+            >
+              🏢 Workspaces
+            </button>
+            
+            <button 
+              onClick={onTemplateClick}
+              className="footer-button template-button"
+              title="Template Manager"
+            >
+              📋 Templates
+            </button>
+          </>
+        )}
+        
         <button 
           onClick={onSettingsClick}
-          className="settings-button"
+          className={`footer-button settings-button ${isCollapsed ? 'collapsed' : ''}`}
           title="Settings"
           aria-label="Open settings"
         >
           ⚙️ {!isCollapsed && 'Settings'}
         </button>
-        
-        {!isCollapsed && (
-          <div className="sidebar-stats">
-            <span className="chat-count">
-              {chats.length} {chats.length === 1 ? 'chat' : 'chats'}
-            </span>
-          </div>
-        )}
       </div>
-
     </div>
   );
-}
+});

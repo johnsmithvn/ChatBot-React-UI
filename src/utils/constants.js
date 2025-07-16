@@ -153,3 +153,128 @@ Hãy luôn format đẹp để dễ đọc!`,
 
   CREATIVE_WRITER: `You are a creative writing assistant. Help with storytelling, character development, and creative expression.`
 };
+
+// Workspace và Group Configuration
+export const WORKSPACE_CONFIG = {
+  MAX_WORKSPACES: 10,
+  MAX_GROUPS_PER_WORKSPACE: 20,
+  MAX_CHATS_PER_GROUP: 50,
+  DEFAULT_WORKSPACE_NAME: 'Default Workspace',
+  DEFAULT_GROUP_NAME: 'General'
+};
+
+// Message Actions
+export const MESSAGE_ACTIONS = {
+  COPY: 'copy',
+  EDIT: 'edit',
+  REGENERATE: 'regenerate',
+  BRANCH: 'branch',
+  DELETE: 'delete',
+  BOOKMARK: 'bookmark'
+};
+
+// Persona Types
+export const PERSONA_TYPES = {
+  ASSISTANT: 'assistant',
+  CODING: 'coding',
+  CREATIVE: 'creative',
+  ANALYTICAL: 'analytical',
+  TRANSLATOR: 'translator',
+  TEACHER: 'teacher',
+  CUSTOM: 'custom'
+};
+
+// Prompt Templates
+export const PROMPT_TEMPLATES = {
+  CODING: {
+    id: 'coding',
+    name: '💻 Code Assistant',
+    description: 'Giúp viết và debug code',
+    template: `Bạn là một senior developer chuyên nghiệp. Hãy:
+- Viết code sạch, có comment
+- Giải thích logic rõ ràng
+- Đưa ra best practices
+- Suggest improvements nếu cần
+
+Ngôn ngữ: {{language}}
+Framework: {{framework}}
+Yêu cầu: {{requirement}}`
+  },
+  TRANSLATOR: {
+    id: 'translator',
+    name: '🌍 Translator',
+    description: 'Dịch thuật chuyên nghiệp',
+    template: `Bạn là một translator chuyên nghiệp. Hãy:
+- Dịch chính xác, tự nhiên
+- Giữ nguyên format và context
+- Giải thích thuật ngữ khó nếu cần
+
+Từ: {{source_language}}
+Sang: {{target_language}}
+Nội dung: {{content}}`
+  },
+  CREATIVE: {
+    id: 'creative',
+    name: '🎨 Creative Writer',
+    description: 'Viết content sáng tạo',
+    template: `Bạn là một creative writer tài năng. Hãy:
+- Viết content hấp dẫn, sáng tạo
+- Sử dụng ngôn ngữ sinh động
+- Phù hợp với tone & style
+
+Thể loại: {{genre}}
+Độ dài: {{length}}
+Đối tượng: {{audience}}
+Chủ đề: {{topic}}`
+  },
+  TEACHER: {
+    id: 'teacher',
+    name: '🎓 Teacher',
+    description: 'Giảng dạy và giải thích',
+    template: `Bạn là một giáo viên kinh nghiệm. Hãy:
+- Giải thích đơn giản, dễ hiểu
+- Đưa ra ví dụ cụ thể
+- Kiểm tra hiểu biết
+- Khuyến khích học tập
+
+Môn học: {{subject}}
+Trình độ: {{level}}
+Chủ đề: {{topic}}`
+  }
+};
+
+// Default Personas
+export const DEFAULT_PERSONAS = {
+  assistant: {
+    id: 'assistant',
+    name: '🤖 AI Assistant',
+    description: 'Trợ lý AI thông minh và hữu ích',
+    systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và sử dụng markdown để format đẹp câu trả lời.`,
+    temperature: 0.7,
+    maxTokens: 1000
+  },
+  coding: {
+    id: 'coding',
+    name: '💻 Code Expert',
+    description: 'Chuyên gia lập trình',
+    systemPrompt: `Bạn là một senior developer với kinh nghiệm sâu rộng. Hãy giúp viết code sạch, debug lỗi và đưa ra best practices.`,
+    temperature: 0.3,
+    maxTokens: 2000
+  },
+  creative: {
+    id: 'creative',
+    name: '🎨 Creative Writer',
+    description: 'Nhà văn sáng tạo',
+    systemPrompt: `Bạn là một creative writer tài năng. Hãy viết content sáng tạo, hấp dẫn với ngôn ngữ sinh động và phong phú.`,
+    temperature: 0.9,
+    maxTokens: 1500
+  },
+  analytical: {
+    id: 'analytical',
+    name: '📊 Data Analyst',
+    description: 'Chuyên gia phân tích dữ liệu',
+    systemPrompt: `Bạn là một data analyst chuyên nghiệp. Hãy phân tích dữ liệu một cách logic, đưa ra insights và recommendations.`,
+    temperature: 0.2,
+    maxTokens: 1200
+  }
+};

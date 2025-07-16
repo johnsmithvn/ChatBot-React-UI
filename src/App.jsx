@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
+import { MessageActions } from './components/MessageActions/MessageActions';
+import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
+import { PromptTemplateManager } from './components/PromptTemplateManager/PromptTemplateManager';
 import { useChats } from './hooks/useChats';
 import { useSettings } from './hooks/useSettings';
+import { useWorkspace } from './hooks/useWorkspace';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -12,9 +16,27 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
   
   // Custom hooks
   const { settings, updateSetting } = useSettings();
+  
+  // Workspace management
+  const {
+    workspaces,
+    currentWorkspace,
+    createWorkspace,
+    updateWorkspace,
+    deleteWorkspace,
+    selectWorkspace,
+    updateWorkspacePrompt,
+    initializeDefaultWorkspace,
+    promptTemplates,
+    createPromptTemplate,
+    updatePromptTemplate,
+    deletePromptTemplate
+  } = useWorkspace();
   
   const {
     chats,
@@ -22,17 +44,22 @@ function App() {
     currentChatId,
     isLoading,
     createNewChat,
-    selectChat,
+    switchToChat,
     deleteChat,
-    renameChat,
+    updateChatTitle,
     sendMessage,
-    initializeFirstChat
-  } = useChats(settings);
+    // Message actions
+    regenerateResponse,
+    editMessage,
+    branchMessage,
+    deleteMessage,
+    bookmarkMessage
+  } = useChats(settings, currentWorkspace?.id, currentWorkspace);
 
-  // Khởi tạo chat đầu tiên nếu cần
+  // Khởi tạo workspace mặc định
   useEffect(() => {
-    initializeFirstChat();
-  }, [initializeFirstChat]);
+    initializeDefaultWorkspace();
+  }, [initializeDefaultWorkspace]);
 
   // Toggle sidebar
   const handleToggleSidebar = () => {
@@ -51,9 +78,23 @@ function App() {
     const messageToSend = message.trim();
     setMessage('');
     
-    await sendMessage(messageToSend);
+    console.log('📤 handleSendMessage - currentWorkspace:', currentWorkspace);
+    console.log('📤 handleSendMessage - currentWorkspace.systemPrompt:', currentWorkspace?.systemPrompt);
+    
+    // Sử dụng system prompt từ workspace
+    const systemPrompt = currentWorkspace?.systemPrompt || null;
+    console.log('📤 handleSendMessage - final systemPrompt:', systemPrompt);
+    
+    await sendMessage(messageToSend, systemPrompt);
   };
 
+  // Wrapper function để tạo chat mới
+  const handleCreateNewChat = useCallback(() => {
+    const newChat = createNewChat();
+    return newChat;
+  }, [createNewChat]);
+
+  // Function để tạo chat mới trong group cụ thể
   // Handle input keypress
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -64,21 +105,40 @@ function App() {
 
   return (
     <div className="app-container">
+      {(() => {
+        console.log('🎯 App render - currentChat:', currentChat);
+        console.log('🎯 App render - currentChatId:', currentChatId);
+        console.log('🎯 App render - chats:', chats);
+        return null;
+      })()}
       {/* Sidebar */}
       <Sidebar
         chats={chats}
         currentChatId={currentChatId}
-        onNewChat={createNewChat}
-        onSelectChat={selectChat}
+        onNewChat={handleCreateNewChat}
+        onSelectChat={switchToChat}
         onDeleteChat={deleteChat}
-        onRenameChat={renameChat}
+        onRenameChat={updateChatTitle}
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={handleToggleSidebar}
         onSettingsClick={() => setShowSettings(true)}
+        onWorkspaceClick={() => setShowWorkspaceManager(true)}
+        onTemplateClick={() => setShowTemplateManager(true)}
+        // Workspace props
+        workspaces={workspaces}
+        currentWorkspace={currentWorkspace}
+        onSelectWorkspace={selectWorkspace}
+        onUpdateWorkspacePrompt={updateWorkspacePrompt}
       />
 
       {/* Main Chat Area */}
       <div className="main-area">
+        {(() => {
+          console.log('📊 Main area render - currentChat:', currentChat);
+          console.log('📊 Main area render - currentChatId:', currentChatId);
+          console.log('📊 Main area render - chats:', chats);
+          return null;
+        })()}
         {currentChat ? (
           <>
             {/* Chat Header */}
@@ -91,6 +151,13 @@ function App() {
                 <span className="model-info">
                   🤖 {settings.model}
                 </span>
+                
+                {/* Workspace System Prompt Info */}
+                {currentWorkspace?.systemPrompt && (
+                  <div className="workspace-prompt-info">
+                    <span className="prompt-active">🎯 Workspace Prompt Active</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -105,6 +172,12 @@ function App() {
             {/* Messages Area */}
             <div className="messages-area">
               <div className="messages-container">
+                {(() => {
+                  console.log('🖥️ UI Render - currentChat:', currentChat);
+                  console.log('🖥️ UI Render - messages:', currentChat?.messages);
+                  console.log('🖥️ UI Render - messages length:', currentChat?.messages?.length);
+                  return null;
+                })()}
                 {currentChat.messages?.length === 0 ? (
                   <div className="empty-chat">
                     <div className="empty-chat-content">
@@ -158,15 +231,49 @@ function App() {
                           <p className="message-text">{msg.content}</p>
                         )}
                         
-                        {settings.showTimestamps && (
-                          <div className="message-timestamp">
-                            {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
-                        )}
+                        {/* Message Actions */}
+                        <MessageActions
+                          message={msg}
+                          onCopy={() => {
+                            navigator.clipboard.writeText(msg.content);
+                          }}
+                          onRegenerate={(message) => {
+                            const messageIndex = currentChat.messages.findIndex(msg => msg.id === message.id);
+                            if (messageIndex !== -1) {
+                              regenerateResponse(currentChatId, messageIndex);
+                            }
+                          }}
+                          onEdit={(message) => {
+                            const newContent = prompt('Edit message:', message.content);
+                            if (newContent && newContent !== message.content) {
+                              editMessage(currentChatId, message.id, newContent);
+                            }
+                          }}
+                          onBranch={(message) => {
+                            const messageIndex = currentChat.messages.findIndex(msg => msg.id === message.id);
+                            if (messageIndex !== -1) {
+                              branchMessage(currentChatId, messageIndex);
+                            }
+                          }}
+                          onDelete={(message) => {
+                            if (confirm('Are you sure you want to delete this message?')) {
+                              deleteMessage(currentChatId, message.id);
+                            }
+                          }}
+                          onBookmark={(message) => {
+                            bookmarkMessage(currentChatId, message.id);
+                          }}
+                        />
                       </div>
+                        
+                      {settings.showTimestamps && (
+                        <div className="message-timestamp">
+                          {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      )}
 
                       {msg.role === 'user' && (
                         <div className="message-avatar">
@@ -242,7 +349,7 @@ function App() {
               <h1>💬 Welcome to ChatBot</h1>
               <p>Select a chat from the sidebar or create a new one to get started</p>
               <button 
-                onClick={createNewChat}
+                onClick={handleCreateNewChat}
                 className="welcome-button"
               >
                 ➕ Start New Chat
@@ -274,6 +381,52 @@ function App() {
         settings={settings}
         onUpdateSetting={updateSetting}
       />
+
+      {/* Workspace Manager Modal */}
+      {showWorkspaceManager && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>🏢 Workspace Manager</h3>
+              <button className="modal-close" onClick={() => setShowWorkspaceManager(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <WorkspaceManager
+                workspaces={workspaces}
+                currentWorkspace={currentWorkspace}
+                onCreateWorkspace={createWorkspace}
+                onSelectWorkspace={selectWorkspace}
+                onUpdateWorkspace={updateWorkspace}
+                onDeleteWorkspace={deleteWorkspace}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Manager Modal */}
+      {showTemplateManager && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>📋 Template Manager</h3>
+              <button className="modal-close" onClick={() => setShowTemplateManager(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <PromptTemplateManager
+                templates={promptTemplates}
+                onSelectTemplate={(template) => {
+                  setMessage(template);
+                  setShowTemplateManager(false);
+                }}
+                onCreateTemplate={createPromptTemplate}
+                onUpdateTemplate={updatePromptTemplate}
+                onDeleteTemplate={deletePromptTemplate}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

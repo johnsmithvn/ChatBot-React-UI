@@ -1,214 +1,368 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { generateChatTitle, limitMessagesByTokens, calculateTotalTokens } from '../utils/helpers';
+import { generateChatTitle, limitMessagesByTokensWithPrompt, prepareMessagesForAPI } from '../utils/helpers';
 import { OpenAIService } from '../services/openai';
 
 /**
- * Hook quản lý tất cả logic chat
+ * Hook quản lý tất cả logic chat theo workspace
  * Bao gồm: tạo chat, xóa chat, gửi tin nhắn, lưu trữ
+ * 
+ * Version: 2.0 - Workspace-based chat isolation
  */
-export function useChats(settings = {}) {
-  const [chats, setChats, clearChats] = useLocalStorage('chat_sessions', []);
+export function useChats(settings = {}, currentWorkspaceId = null, currentWorkspace = null) {
+  const [allChats, setAllChats] = useLocalStorage('workspace_chats', {});
   const [currentChatId, setCurrentChatId] = useLocalStorage('current_chat_id', null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Lấy chat hiện tại
-  const currentChat = chats.find(chat => chat.id === currentChatId);
+  // Lấy chats của workspace hiện tại với useMemo để tối ưu
+  const chats = useMemo(() => {
+    const result = currentWorkspaceId ? (allChats[currentWorkspaceId] || []) : [];
+    console.log('🔄 useChats - chats recalculated:', { currentWorkspaceId, result });
+    return result;
+  }, [allChats, currentWorkspaceId]);
 
-  // Debug effect để track changes
-  useEffect(() => {
-    console.log('Chats updated:', chats);
-    console.log('Current chat:', currentChat);
-  }, [chats, currentChat]);
+  // Tìm chat hiện tại
+  const currentChat = useMemo(() => {
+    const result = chats.find(chat => chat.id === currentChatId) || null;
+    console.log('🔄 useChats - currentChat recalculated:', { currentChatId, result });
+    return result;
+  }, [chats, currentChatId]);
 
-  /**
-   * Tạo chat mới
-   */
+  // Hàm cập nhật chats cho workspace hiện tại
+  const updateWorkspaceChats = useCallback((newChats) => {
+    if (!currentWorkspaceId) return;
+    
+    console.log('💾 updateWorkspaceChats called:', { currentWorkspaceId, newChats });
+    
+    setAllChats(prev => {
+      const updated = {
+        ...prev,
+        [currentWorkspaceId]: newChats
+      };
+      console.log('💾 setAllChats updating:', { prev, updated });
+      return updated;
+    });
+  }, [setAllChats, currentWorkspaceId]);
+
+  // Không tự động tạo chat - user sẽ tự tạo khi cần
+
+  // Tạo chat mới
   const createNewChat = useCallback(() => {
+    if (!currentWorkspaceId) {
+      console.error('❌ Cannot create chat: no currentWorkspaceId');
+      return;
+    }
+    
     const newChat = {
       id: Date.now().toString(),
       title: 'New Chat',
       messages: [],
-      model: settings.model,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      model: settings.model || 'gpt-3.5-turbo'
     };
     
-    setChats(prev => [newChat, ...prev]);
-    setCurrentChatId(newChat.id);
-    return newChat;
-  }, [setChats, setCurrentChatId, settings.model]);
-
-  /**
-   * Chọn chat
-   */
-  const selectChat = useCallback((chatId) => {
-    setCurrentChatId(chatId);
-  }, [setCurrentChatId]);
-
-  /**
-   * Xóa chat
-   */
-  const deleteChat = useCallback((chatId) => {
-    setChats(prev => prev.filter(chat => chat.id !== chatId));
-    if (currentChatId === chatId) {
-      const remainingChats = chats.filter(chat => chat.id !== chatId);
-      setCurrentChatId(remainingChats.length > 0 ? remainingChats[0].id : null);
-    }
-  }, [chats, currentChatId, setChats, setCurrentChatId]);
-
-  /**
-   * Đổi tên chat
-   */
-  const renameChat = useCallback((chatId, newTitle) => {
-    setChats(prev => prev.map(chat => 
-      chat.id === chatId 
-        ? { ...chat, title: newTitle, updatedAt: new Date().toISOString() }
-        : chat
-    ));
-  }, [setChats]);
-
-  /**
-   * Cập nhật tin nhắn trong chat
-   */
-  const updateChatMessages = useCallback((chatId, newMessages) => {
-    console.log('Updating chat messages for chat:', chatId, 'with messages:', newMessages);
+    console.log('🆕 Creating new chat:', newChat);
     
-    setChats(prevChats => {
-      const updatedChats = prevChats.map(chat => {
-        if (chat.id === chatId) {
-          const updatedChat = {
-            ...chat,
-            messages: newMessages,
-            updatedAt: new Date().toISOString(),
-            // Auto-generate title từ first user message
-            title: chat.messages?.length === 0 && newMessages.length > 0 && newMessages[0].role === 'user' 
-              ? generateChatTitle(newMessages[0].content) 
-              : chat.title
-          };
-          console.log('Updated chat:', updatedChat);
-          return updatedChat;
-        }
-        return chat;
-      });
-      console.log('All updated chats:', updatedChats);
-      return updatedChats;
-    });
-  }, [setChats]);
+    const newChats = [newChat, ...chats];
+    updateWorkspaceChats(newChats);
+    setCurrentChatId(newChat.id);
+    
+    console.log('✅ New chat created and set as current:', { chatId: newChat.id, newChats });
+    return newChat;
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId, settings.model]);
 
-  /**
-   * Gửi tin nhắn
-   */
-  const sendMessage = useCallback(async (messageContent) => {
-    if (!currentChatId || !messageContent.trim()) return;
+  // Xóa chat
+  const deleteChat = useCallback((chatId) => {
+    if (!currentWorkspaceId) return;
+    
+    const newChats = chats.filter(chat => chat.id !== chatId);
+    updateWorkspaceChats(newChats);
+    
+    if (currentChatId === chatId) {
+      const nextChat = newChats[0];
+      setCurrentChatId(nextChat ? nextChat.id : null);
+    }
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, currentChatId, setCurrentChatId]);
 
-    // Kiểm tra API key
-    const apiKey = settings.useCustomApiKey ? settings.apiKey : import.meta.env.VITE_OPENAI_API_KEY;
-    if (!apiKey || apiKey.trim() === '') {
-      const errorMessage = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: settings.useCustomApiKey 
-          ? '❌ **Lỗi:** Vui lòng cấu hình API Key trong Settings trước khi sử dụng.'
-          : '❌ **Lỗi:** Không tìm thấy API Key trong environment variables. Vui lòng bật "Use custom API key" và nhập API key.',
-        timestamp: new Date().toISOString()
-      };
-      updateChatMessages(currentChatId, errorMessage);
+  // Cập nhật tiêu đề chat
+  const updateChatTitle = useCallback((chatId, newTitle) => {
+    if (!currentWorkspaceId) return;
+    
+    const newChats = chats.map(chat =>
+      chat.id === chatId ? { ...chat, title: newTitle, updatedAt: new Date().toISOString() } : chat
+    );
+    updateWorkspaceChats(newChats);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats]);
+
+  // Gửi tin nhắn
+  const sendMessage = useCallback(async (messageContent, systemPrompt = null) => {
+    console.log('🔥 sendMessage called with:', { messageContent, systemPrompt, currentWorkspaceId, currentChatId });
+    
+    if (!currentWorkspaceId) {
+      console.error('❌ No currentWorkspaceId');
+      return;
+    }
+    
+    const targetChatId = currentChatId;
+    if (!targetChatId) {
+      console.error('❌ No targetChatId');
       return;
     }
 
-    setIsLoading(true);
+    const targetChat = chats.find(chat => chat.id === targetChatId);
+    if (!targetChat) {
+      console.error('❌ No targetChat found');
+      return;
+    }
 
-    // Lấy messages hiện tại TRƯỚC khi update
-    const currentMessages = currentChat?.messages || [];
+    console.log('✅ Target chat found:', targetChat);
 
-    // Tạo tin nhắn user
-    const userMessage = {
-      id: Date.now().toString(),
+    const newMessage = {
+      id: `msg_${Date.now()}`,
+      content: messageContent,
       role: 'user',
-      content: messageContent.trim(),
       timestamp: new Date().toISOString()
     };
 
-    console.log('Adding user message:', userMessage);
-    console.log('Current messages before update:', currentMessages);
+    console.log('📨 New message created:', newMessage);
 
-    // Hiển thị user message ngay lập tức
-    const messagesWithUser = [...currentMessages, userMessage];
-    updateChatMessages(currentChatId, messagesWithUser);
+    const updatedChat = {
+      ...targetChat,
+      messages: [...targetChat.messages, newMessage],
+      updatedAt: new Date().toISOString()
+    };
+
+    const updatedChats = chats.map(chat =>
+      chat.id === targetChatId ? updatedChat : chat
+    );
+
+    console.log('💾 Updating workspace chats:', updatedChats);
+    
+    // Check if the user message was added correctly
+    const checkChat = updatedChats.find(chat => chat.id === targetChatId);
+    console.log('🔍 Check chat after adding user message:', checkChat);
+    console.log('🔍 Check messages in chat:', checkChat?.messages);
+    
+    updateWorkspaceChats(updatedChats);
+    setIsLoading(true);
 
     try {
-      // Giới hạn context theo token limit
-      const contextTokens = settings.contextTokens || 10000;
-      const limitedMessages = limitMessagesByTokens(messagesWithUser, contextTokens);
+      const updatedChat = updatedChats.find(chat => chat.id === targetChatId);
+      const limitedMessages = limitMessagesByTokensWithPrompt(updatedChat.messages, 4000);
+      const apiMessages = prepareMessagesForAPI(limitedMessages);
+
+      console.log('🔑 API call preparation:', {
+        limitedMessages: limitedMessages.length,
+        apiMessages: apiMessages.length,
+        systemPrompt: systemPrompt || currentWorkspace?.systemPrompt || settings.systemPrompt
+      });
+
+      // Tạo instance OpenAIService với API key từ settings
+      const apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+      console.log('🔑 API key check:', { hasApiKey: !!apiKey, apiKeyLength: apiKey?.length });
       
-      console.log(`📊 Context limiting: ${messagesWithUser.length} → ${limitedMessages.length} messages`);
-      console.log(`🧠 Total tokens: ${calculateTotalTokens(limitedMessages)}`);
+      if (!apiKey) {
+        throw new Error('No API key found');
+      }
       
-      // Chuẩn bị messages cho API
-      const messagesForAPI = limitedMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      const openAIService = new OpenAIService(apiKey);
 
-      console.log('Limited messages for API:', messagesForAPI);
+      console.log('🚀 Calling OpenAI API...');
+      const response = await openAIService.sendMessage(
+        apiMessages,
+        settings.model || 'gpt-3.5-turbo',
+        {
+          temperature: settings.temperature || 0.7,
+          max_tokens: settings.max_tokens || 1000,
+          systemPrompt: systemPrompt || currentWorkspace?.systemPrompt || settings.systemPrompt || null
+        }
+      );
 
-      // Gọi OpenAI API
-      const openaiService = new OpenAIService(apiKey);
-      const response = await openaiService.sendMessage(messagesForAPI, settings.model);
+      console.log('✅ OpenAI API response:', response);
 
-      // Thêm response từ AI
       const assistantMessage = {
-        id: (Date.now() + 1).toString(),
+        id: `msg_${Date.now() + 1}`,
+        content: response.content,
         role: 'assistant',
-        content: response,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        usage: response.usage
       };
 
-      // Cập nhật với cả user message và assistant message
-      const finalMessages = [...messagesWithUser, assistantMessage];
-      updateChatMessages(currentChatId, finalMessages);
+      console.log('🤖 Assistant message created:', assistantMessage);
 
+      // Cập nhật với phản hồi
+      const finalChats = updatedChats.map(chat => {
+        if (chat.id === targetChatId) {
+          const newMessages = [...chat.messages, assistantMessage];
+          return {
+            ...chat,
+            messages: newMessages,
+            updatedAt: new Date().toISOString(),
+            title: chat.title === 'New Chat' ? generateChatTitle(newMessages) : chat.title
+          };
+        }
+        return chat;
+      });
+
+      console.log('🎯 Final chats with assistant message:', finalChats);
+      updateWorkspaceChats(finalChats);
+      return response;
     } catch (error) {
       console.error('Error sending message:', error);
-      
-      // Thêm error message
-      const errorMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `❌ Lỗi: ${error.message}`,
-        timestamp: new Date().toISOString(),
-        isError: true
-      };
-
-      // Cập nhật với user message và error message
-      const finalMessages = [...messagesWithUser, errorMessage];
-      updateChatMessages(currentChatId, finalMessages);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [currentChatId, currentChat, settings, updateChatMessages]);
+  }, [currentWorkspaceId, chats, currentChatId, updateWorkspaceChats, settings, currentWorkspace]);
 
-  /**
-   * Xóa tất cả chat
-   */
+  // Regenerate response
+  const regenerateResponse = useCallback(async (chatId, messageIndex) => {
+    if (!currentWorkspaceId) return;
+    
+    const targetChat = chats.find(chat => chat.id === chatId);
+    if (!targetChat) return;
+
+    const messagesUpToIndex = targetChat.messages.slice(0, messageIndex);
+    const updatedChats = chats.map(chat =>
+      chat.id === chatId ? { ...chat, messages: messagesUpToIndex, updatedAt: new Date().toISOString() } : chat
+    );
+
+    updateWorkspaceChats(updatedChats);
+    setIsLoading(true);
+
+    try {
+      const limitedMessages = limitMessagesByTokensWithPrompt(messagesUpToIndex, 4000);
+      const apiMessages = prepareMessagesForAPI(limitedMessages);
+
+      // Tạo instance OpenAIService với API key từ settings
+      const apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+      const openAIService = new OpenAIService(apiKey);
+
+      const response = await openAIService.sendMessage(
+        apiMessages,
+        settings.model || 'gpt-3.5-turbo',
+        {
+          temperature: settings.temperature || 0.7,
+          max_tokens: settings.max_tokens || 1000,
+          systemPrompt: currentWorkspace?.systemPrompt || settings.systemPrompt || null
+        }
+      );
+
+      const assistantMessage = {
+        id: Date.now().toString(),
+        content: response.content,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        usage: response.usage
+      };
+
+      const finalChats = updatedChats.map(chat => {
+        if (chat.id === chatId) {
+          return {
+            ...chat,
+            messages: [...chat.messages, assistantMessage],
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return chat;
+      });
+
+      updateWorkspaceChats(finalChats);
+      return response;
+    } catch (error) {
+      console.error('Error regenerating response:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, settings, currentWorkspace]);
+
+  // Edit message
+  const editMessage = useCallback((chatId, messageId, newContent) => {
+    if (!currentWorkspaceId) return;
+    
+    const updatedChats = chats.map(chat => {
+      if (chat.id === chatId) {
+        const updatedMessages = chat.messages.map(msg =>
+          msg.id === messageId ? { ...msg, content: newContent, edited: true } : msg
+        );
+        return { ...chat, messages: updatedMessages, updatedAt: new Date().toISOString() };
+      }
+      return chat;
+    });
+
+    updateWorkspaceChats(updatedChats);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats]);
+
+  // Branch message
+  const branchMessage = useCallback((chatId, messageIndex) => {
+    if (!currentWorkspaceId) return;
+    
+    const sourceChat = chats.find(chat => chat.id === chatId);
+    if (!sourceChat) return;
+
+    const branchedMessages = sourceChat.messages.slice(0, messageIndex + 1);
+    const newChat = {
+      id: Date.now().toString(),
+      title: `${sourceChat.title} (Branch)`,
+      messages: branchedMessages,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      model: sourceChat.model,
+      parentChatId: chatId
+    };
+
+    const newChats = [newChat, ...chats];
+    updateWorkspaceChats(newChats);
+    setCurrentChatId(newChat.id);
+    return newChat;
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId]);
+
+  // Delete message
+  const deleteMessage = useCallback((chatId, messageId) => {
+    if (!currentWorkspaceId) return;
+    
+    const updatedChats = chats.map(chat => {
+      if (chat.id === chatId) {
+        const updatedMessages = chat.messages.filter(msg => msg.id !== messageId);
+        return { ...chat, messages: updatedMessages, updatedAt: new Date().toISOString() };
+      }
+      return chat;
+    });
+
+    updateWorkspaceChats(updatedChats);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats]);
+
+  // Bookmark message
+  const bookmarkMessage = useCallback((chatId, messageId) => {
+    if (!currentWorkspaceId) return;
+    
+    const updatedChats = chats.map(chat => {
+      if (chat.id === chatId) {
+        const updatedMessages = chat.messages.map(msg =>
+          msg.id === messageId ? { ...msg, bookmarked: !msg.bookmarked } : msg
+        );
+        return { ...chat, messages: updatedMessages, updatedAt: new Date().toISOString() };
+      }
+      return chat;
+    });
+
+    updateWorkspaceChats(updatedChats);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats]);
+
+  // Clear all chats
   const clearAllChats = useCallback(() => {
-    if (window.confirm('🗑️ Bạn có chắc muốn xóa tất cả chat?')) {
-      clearChats();
-      setCurrentChatId(null);
-    }
-  }, [clearChats, setCurrentChatId]);
+    if (!currentWorkspaceId) return;
+    
+    updateWorkspaceChats([]);
+    setCurrentChatId(null);
+  }, [currentWorkspaceId, updateWorkspaceChats, setCurrentChatId]);
 
-  /**
-   * Khởi tạo chat đầu tiên nếu chưa có
-   */
-  const initializeFirstChat = useCallback(() => {
-    if (chats.length === 0) {
-      createNewChat();
-    } else if (!currentChatId && chats.length > 0) {
-      setCurrentChatId(chats[0].id);
-    }
-  }, [chats, currentChatId, createNewChat, setCurrentChatId]);
+  // Switch to chat
+  const switchToChat = useCallback((chatId) => {
+    setCurrentChatId(chatId);
+  }, [setCurrentChatId]);
 
   return {
     // State
@@ -219,11 +373,19 @@ export function useChats(settings = {}) {
 
     // Actions
     createNewChat,
-    selectChat,
     deleteChat,
-    renameChat,
+    updateChatTitle,
     sendMessage,
-    clearAllChats,
-    initializeFirstChat
+    switchToChat,
+    regenerateResponse,
+
+    // Message actions
+    editMessage,
+    branchMessage,
+    deleteMessage,
+    bookmarkMessage,
+
+    // Utils
+    clearAllChats
   };
 }

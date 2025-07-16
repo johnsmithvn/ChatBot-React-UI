@@ -376,6 +376,73 @@ export function limitMessagesByTokens(messages, maxTokens = CHAT_SETTINGS.DEFAUL
 }
 
 /**
+ * Giới hạn messages theo token limit với bảo vệ default prompt
+ * @param {Array} messages - Danh sách messages
+ * @param {number} maxTokens - Giới hạn token
+ * @param {string} defaultPrompt - Prompt mặc định của group (luôn được bảo vệ)
+ * @returns {Array} - Messages sau khi giới hạn
+ */
+export function limitMessagesByTokensWithPrompt(messages, maxTokens, defaultPrompt = null) {
+  if (!messages || messages.length === 0) return [];
+
+  // Tính token cho default prompt (nếu có)
+  const promptTokens = defaultPrompt ? estimateTokens(defaultPrompt) : 0;
+  const availableTokens = maxTokens - promptTokens;
+
+  // Nếu available tokens quá ít, chỉ giữ lại message cuối cùng
+  if (availableTokens < 500) {
+    return messages.slice(-1);
+  }
+
+  // Tính token từ cuối lên đầu (để giữ lại messages gần nhất)
+  let totalTokens = 0;
+  const result = [];
+  
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    const messageTokens = estimateTokens(message.content);
+    
+    if (totalTokens + messageTokens <= availableTokens) {
+      totalTokens += messageTokens;
+      result.unshift(message);
+    } else {
+      // Đã đạt giới hạn, dừng lại
+      break;
+    }
+  }
+
+  console.log(`🔒 Prompt tokens: ${promptTokens}, Available: ${availableTokens}, Used: ${totalTokens}`);
+  
+  return result;
+}
+
+/**
+ * Chuẩn bị messages cho API với default prompt
+ * @param {Array} messages - Danh sách messages
+ * @param {string} defaultPrompt - Prompt mặc định của group
+ * @returns {Array} - Messages cho API
+ */
+export function prepareMessagesForAPI(messages, defaultPrompt = null) {
+  const apiMessages = messages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }));
+
+  // Nếu có default prompt, thêm vào đầu như system message
+  if (defaultPrompt && defaultPrompt.trim()) {
+    return [
+      {
+        role: 'system',
+        content: defaultPrompt.trim()
+      },
+      ...apiMessages
+    ];
+  }
+
+  return apiMessages;
+}
+
+/**
  * Validate context tokens input
  * @param {number|string} value - Giá trị cần validate
  * @returns {Object} - { isValid: boolean, value: number, error: string }
