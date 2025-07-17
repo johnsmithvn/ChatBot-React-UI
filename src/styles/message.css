@@ -238,17 +238,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
+  margin-top: 4px;
   font-size: 0.75rem;
   color: var(--text-secondary);
+  margin-left: 44px; /* Avatar width (36px) + gap (12px) - small adjust */
 }
 
 .message-actions-inline-wrapper.user {
   flex-direction: row-reverse;
+  margin-left: 0;
+  margin-right: 44px; /* Align với avatar bên phải */
 }
 
 .message-actions-inline-wrapper.assistant {
   flex-direction: row;
+  margin-left: 44px; /* Align với bubble bên trái */
 }
 
 .message-actions-inline {
