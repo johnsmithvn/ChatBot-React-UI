@@ -48,7 +48,7 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
       }}
     >
       <div
-        className="modal-content"
+        className="modal-content settings-modal"
         onClick={e => e.stopPropagation()}
       >
         <div className="modal-header">
@@ -58,7 +58,7 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="modal-body settings-content">
           {/* API Settings */}
           <div className="settings-section">
             <h3>🔑 API Configuration</h3>
@@ -126,25 +126,32 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
             <h3>🎛️ Advanced Settings</h3>
             
             <div className="form-group">
-              <label htmlFor="temperature">
-                Temperature: {tempSettings.temperature}
-              </label>
-              <input
-                id="temperature"
-                type="range"
-                min="0"
-                max="2"
-                step="0.1"
-                value={tempSettings.temperature}
-                onChange={(e) => setTempSettings({
-                  ...tempSettings,
-                  temperature: parseFloat(e.target.value)
-                })}
-                className="form-range"
-              />
-              <small className="form-hint">
-                🎯 Điều chỉnh tính sáng tạo (0 = chính xác, 2 = sáng tạo)
-              </small>
+              <div className="temperature-slider">
+                <div className="slider-container">
+                  <label htmlFor="temperature" style={{ minWidth: '120px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                    🌡️ Temperature:
+                  </label>
+                  <input
+                    id="temperature"
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={tempSettings.temperature}
+                    onChange={(e) => setTempSettings({
+                      ...tempSettings,
+                      temperature: parseFloat(e.target.value)
+                    })}
+                    className="slider-input"
+                  />
+                  <span className="slider-value" data-label="VALUE">
+                    {tempSettings.temperature}
+                  </span>
+                </div>
+                <small className="form-hint" style={{ marginTop: '12px', display: 'block', textAlign: 'center' }}>
+                  🎯 Điều chỉnh tính sáng tạo (0 = chính xác, 2 = sáng tạo)
+                </small>
+              </div>
             </div>
 
             <div className="form-group">

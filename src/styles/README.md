@@ -14,6 +14,7 @@ src/styles/
 ├── message.css       # Message bubbles and actions
 ├── modal.css         # Modal components and animations
 ├── forms.css         # Form inputs and validation
+├── token.css         # Token usage display
 ├── workspace.css     # Workspace management
 ├── template.css      # Template manager
 └── settings.css      # Settings modal
@@ -30,6 +31,7 @@ src/index.css
     ├── message.css
     ├── modal.css
     ├── forms.css
+    ├── token.css
     ├── workspace.css
     ├── template.css
     └── settings.css
@@ -102,6 +104,13 @@ All colors and common values are defined as CSS custom properties:
 - Checkboxes and radios
 - File inputs
 - Switch toggles
+
+### token.css
+- Token usage display
+- Progress bars and indicators
+- Usage warnings and alerts
+- Responsive token info
+- Tooltip styling
 
 ### workspace.css
 - Workspace selector

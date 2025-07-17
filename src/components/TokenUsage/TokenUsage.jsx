@@ -9,11 +9,11 @@ export function TokenUsage({ messages, contextTokens = CHAT_SETTINGS.DEFAULT_CON
   const totalTokens = calculateTotalTokens(messages || []);
   const percentage = Math.min((totalTokens / contextTokens) * 100, 100);
   
-  // Định nghĩa màu sắc theo mức độ sử dụng
-  const getBarColor = () => {
-    if (percentage < 50) return '#10b981'; // green
-    if (percentage < 80) return '#f59e0b'; // yellow
-    return '#ef4444'; // red
+  // Định nghĩa trạng thái theo mức độ sử dụng
+  const getStatusClass = () => {
+    if (percentage < 50) return '';
+    if (percentage < 80) return 'warning';
+    return 'danger';
   };
 
   const getStatusText = () => {
@@ -22,24 +22,23 @@ export function TokenUsage({ messages, contextTokens = CHAT_SETTINGS.DEFAULT_CON
     return '🚨 Gần đầy';
   };
 
+  const statusClass = getStatusClass();
+
   return (
     <div className="token-usage">
       <div className="token-usage-header">
         <span className="token-usage-label">
           🧠 Context Tokens
         </span>
-        <span className="token-usage-status">
+        <span className={`token-usage-status ${statusClass}`}>
           {getStatusText()}
         </span>
       </div>
       
       <div className="token-usage-bar">
         <div 
-          className="token-usage-fill"
-          style={{ 
-            width: `${percentage}%`,
-            backgroundColor: getBarColor()
-          }}
+          className={`token-usage-fill ${statusClass}`}
+          style={{ width: `${percentage}%` }}
         />
       </div>
       
@@ -47,13 +46,13 @@ export function TokenUsage({ messages, contextTokens = CHAT_SETTINGS.DEFAULT_CON
         <span className="token-usage-text">
           {totalTokens.toLocaleString()} / {contextTokens.toLocaleString()} tokens
         </span>
-        <span className="token-usage-percentage">
+        <span className={`token-usage-percentage ${statusClass}`}>
           {percentage.toFixed(1)}%
         </span>
       </div>
       
       {percentage > 80 && (
-        <div className="token-usage-warning">
+        <div className={`token-usage-warning ${statusClass}`}>
           <small>
             💡 Lịch sử chat sẽ được rút gọn tự động khi gửi tin nhắn
           </small>

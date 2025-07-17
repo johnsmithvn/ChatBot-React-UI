@@ -67,13 +67,6 @@
   font-size: 0.75rem;
 }
 
-/* Token Usage Container */
-.token-usage-container {
-  padding: 8px 24px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--background-light);
-}
-
 /* Messages Area */
 .messages-area {
   flex: 1;

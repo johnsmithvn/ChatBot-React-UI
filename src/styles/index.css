@@ -13,6 +13,7 @@
 /* UI components */
 @import './modal.css';
 @import './forms.css';
+@import './token.css';
 
 /* Feature-specific styles */
 @import './workspace.css';
