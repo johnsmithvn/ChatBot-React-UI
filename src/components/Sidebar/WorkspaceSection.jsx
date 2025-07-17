@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-import { WorkspaceInfo } from './WorkspaceInfo';
 import { ChatList } from './ChatList';
 
 /**
@@ -14,25 +12,9 @@ export function WorkspaceSection({
   onSelectChat,
   onDeleteChat,
   onRenameChat,
-  onUpdateWorkspacePrompt
+  onOpenPromptModal,
+  onOpenWorkspaceInfo
 }) {
-  const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
-  const [showPromptEditor, setShowPromptEditor] = useState(false);
-  const [tempPrompt, setTempPrompt] = useState('');
-
-  // Update temp prompt when workspace changes
-  useEffect(() => {
-    if (currentWorkspace) {
-      setTempPrompt(currentWorkspace.systemPrompt || '');
-    }
-  }, [currentWorkspace]);
-
-  const handleSavePrompt = () => {
-    if (currentWorkspace && onUpdateWorkspacePrompt) {
-      onUpdateWorkspacePrompt(currentWorkspace.id, tempPrompt);
-      setShowPromptEditor(false);
-    }
-  };
 
   if (!currentWorkspace) {
     return (
@@ -64,66 +46,29 @@ export function WorkspaceSection({
         </div>
         
         <div className="workspace-info">
-          <div className="workspace-description-container">
-            <p className="workspace-description">{currentWorkspace.description}</p>
-            <button 
-              className="workspace-help-btn"
-              onClick={() => setShowWorkspaceInfo(true)}
-              title="Workspace Guide"
-            >
-              ❓
-            </button>
-          </div>
+          <p className="workspace-description">{currentWorkspace.description}</p>
         </div>
       </div>
 
-      {/* Workspace Prompt Configuration */}
-      <div className="workspace-prompt-section">
-        <div className="prompt-header">
-          <h4 className="prompt-title">⚙️ Workspace Prompt</h4>
-          <button
-            className="prompt-edit-btn"
-            onClick={() => setShowPromptEditor(!showPromptEditor)}
-            title="Edit workspace prompt"
-          >
-            ✏️
-          </button>
-        </div>
+      {/* Workspace Actions - Compact */}
+      <div className="workspace-actions">
+        <button
+          className="workspace-action-button prompt-button"
+          onClick={() => onOpenPromptModal?.()}
+          title="Configure workspace system prompt"
+        >
+          <span className="action-icon">⚙️</span>
+          <span className="action-text">Prompt</span>
+        </button>
         
-        {showPromptEditor ? (
-          <div className="prompt-editor">
-            <textarea
-              value={tempPrompt}
-              onChange={(e) => setTempPrompt(e.target.value)}
-              placeholder="Enter system prompt for this workspace..."
-              className="prompt-textarea"
-              rows={4}
-            />
-            <div className="prompt-actions">
-              <button 
-                onClick={handleSavePrompt}
-                className="prompt-save-btn"
-              >
-                Save
-              </button>
-              <button 
-                onClick={() => {
-                  setShowPromptEditor(false);
-                  setTempPrompt(currentWorkspace.systemPrompt || '');
-                }}
-                className="prompt-cancel-btn"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="prompt-preview">
-            <p className="prompt-text">
-              {currentWorkspace.systemPrompt || 'No system prompt configured'}
-            </p>
-          </div>
-        )}
+        <button
+          className="workspace-action-button info-button"
+          onClick={() => onOpenWorkspaceInfo?.()}
+          title="Workspace information"
+        >
+          <span className="action-icon">ℹ️</span>
+          <span className="action-text">Info</span>
+        </button>
       </div>
 
       {/* Chats List */}
@@ -142,12 +87,6 @@ export function WorkspaceSection({
           isCollapsed={false}
         />
       </div>
-
-      {/* Workspace Info Modal */}
-      <WorkspaceInfo 
-        isOpen={showWorkspaceInfo}
-        onClose={() => setShowWorkspaceInfo(false)}
-      />
     </div>
   );
 }

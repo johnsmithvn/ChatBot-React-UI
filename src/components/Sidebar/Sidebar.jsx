@@ -22,7 +22,8 @@ export const Sidebar = memo(function Sidebar({
   workspaces = [],
   currentWorkspace,
   onSelectWorkspace,
-  onUpdateWorkspacePrompt
+  onOpenPromptModal,
+  onOpenWorkspaceInfo
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
@@ -73,20 +74,28 @@ export const Sidebar = memo(function Sidebar({
         />
       )}
       
-      {/* Header */}
+      {/* Header - Enhanced */}
       <div className="sidebar-header">
-        <button 
-          onClick={onToggleCollapse}
-          className="collapse-button"
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {isCollapsed ? '👁️' : '👁️‍🗨️'}
-        </button>
-        
-        {!isCollapsed && (
-          <h1 className="sidebar-title">💬 ChatBot</h1>
-        )}
+        <div className="header-content">
+          {!isCollapsed && (
+            <div className="app-branding">
+              <div className="app-icon">💬</div>
+              <div className="app-info">
+                <h1 className="app-title">ChatBot</h1>
+                <span className="app-subtitle">AI Assistant</span>
+              </div>
+            </div>
+          )}
+          
+          <button 
+            onClick={onToggleCollapse}
+            className={`collapse-button ${isCollapsed ? 'collapsed' : ''}`}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isCollapsed ? '👁️' : '⚡'}
+          </button>
+        </div>
       </div>
 
       {!isCollapsed && (
@@ -107,7 +116,8 @@ export const Sidebar = memo(function Sidebar({
               onSelectChat={onSelectChat}
               onDeleteChat={onDeleteChat}
               onRenameChat={onRenameChat}
-              onUpdateWorkspacePrompt={onUpdateWorkspacePrompt}
+              onOpenPromptModal={onOpenPromptModal}
+              onOpenWorkspaceInfo={onOpenWorkspaceInfo}
             />
           </div>
         </>

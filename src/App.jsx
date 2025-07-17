@@ -5,6 +5,8 @@ import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
 import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
 import { PromptTemplateManager } from './components/PromptTemplateManager/PromptTemplateManager';
+import { WorkspacePromptModal } from './components/WorkspacePrompt/WorkspacePromptModal';
+import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
 import { useChats } from './hooks/useChats';
 import { useSettings } from './hooks/useSettings';
 import { useWorkspace } from './hooks/useWorkspace';
@@ -18,6 +20,8 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
   
   // Custom hooks
   const { settings, updateSetting } = useSettings();
@@ -139,7 +143,8 @@ function App() {
         workspaces={workspaces}
         currentWorkspace={currentWorkspace}
         onSelectWorkspace={selectWorkspace}
-        onUpdateWorkspacePrompt={updateWorkspacePrompt}
+        onOpenPromptModal={() => setShowPromptModal(true)}
+        onOpenWorkspaceInfo={() => setShowWorkspaceInfo(true)}
       />
 
       {/* Main Chat Area */}
@@ -472,6 +477,20 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Workspace Prompt Modal */}
+      <WorkspacePromptModal
+        isOpen={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        workspace={currentWorkspace}
+        onSave={updateWorkspacePrompt}
+      />
+
+      {/* Workspace Info Modal */}
+      <WorkspaceInfoModal
+        isOpen={showWorkspaceInfo}
+        onClose={() => setShowWorkspaceInfo(false)}
+      />
     </div>
   );
 }
