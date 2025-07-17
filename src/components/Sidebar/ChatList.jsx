@@ -74,36 +74,38 @@ export function ChatList({
           ) : (
             // Expanded view - hiển thị full info
             <>
-              <div className="chat-item-content">
-                {editingId === chat.id ? (
-                  <input 
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    onBlur={() => handleSaveEdit(chat.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSaveEdit(chat.id);
-                      } else if (e.key === 'Escape') {
-                        handleCancelEdit();
-                      }
-                    }}
-                    className="chat-title-input"
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <>
+              <div className="chat-content">
+                <div className="chat-item-content">
+                  <span className="chat-icon">💬</span>
+                  {editingId === chat.id ? (
+                    <input 
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onBlur={() => handleSaveEdit(chat.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveEdit(chat.id);
+                        } else if (e.key === 'Escape') {
+                          handleCancelEdit();
+                        }
+                      }}
+                      className="chat-title-input"
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
                     <div className="chat-title">{chat.title}</div>
-                    <div className="chat-meta">
-                      <span className="chat-time">
-                        {formatMessageTime(chat.updatedAt, 'relative')}
-                      </span>
-                      <span className="chat-count">
-                        {chat.messages?.length || 0} messages
-                      </span>
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
+                
+                <div className="chat-meta">
+                  <span className="chat-time">
+                    {formatMessageTime(chat.updatedAt, 'relative')}
+                  </span>
+                  <span className="chat-message-count">
+                    {chat.messages?.length || 0} msgs
+                  </span>
+                </div>
               </div>
 
               {editingId !== chat.id && (
