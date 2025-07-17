@@ -361,8 +361,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
 
   // Switch to chat
   const switchToChat = useCallback((chatId) => {
+    console.log('🔄 switchToChat called:', { chatId, currentChatId });
     setCurrentChatId(chatId);
-  }, [setCurrentChatId]);
+    console.log('✅ switchToChat completed, new currentChatId should be:', chatId);
+  }, [setCurrentChatId, currentChatId]);
 
   return {
     // State

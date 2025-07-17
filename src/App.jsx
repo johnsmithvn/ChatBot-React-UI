@@ -90,9 +90,13 @@ function App() {
 
   // Wrapper function để tạo chat mới
   const handleCreateNewChat = useCallback(() => {
+    console.log('🆕 handleCreateNewChat called');
+    console.log('🆕 currentWorkspace:', currentWorkspace);
+    console.log('🆕 createNewChat function exists:', !!createNewChat);
     const newChat = createNewChat();
+    console.log('🆕 newChat created:', newChat);
     return newChat;
-  }, [createNewChat]);
+  }, [createNewChat, currentWorkspace]);
 
   // Function để tạo chat mới trong group cụ thể
   // Handle input keypress
@@ -105,12 +109,6 @@ function App() {
 
   return (
     <div className="app-container">
-      {(() => {
-        console.log('🎯 App render - currentChat:', currentChat);
-        console.log('🎯 App render - currentChatId:', currentChatId);
-        console.log('🎯 App render - chats:', chats);
-        return null;
-      })()}
       {/* Sidebar */}
       <Sidebar
         chats={chats}
@@ -135,13 +133,7 @@ function App() {
       />
 
       {/* Main Chat Area */}
-      <div className="main-area" style={{ minHeight: 500, background: '#fff', borderRadius: 8, margin: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-        {(() => {
-          console.log('📊 Main area render - currentChat:', currentChat);
-          console.log('📊 Main area render - currentChatId:', currentChatId);
-          console.log('📊 Main area render - chats:', chats);
-          return null;
-        })()}
+      <div className="main-area">
         {currentChat ? (
           <>
             {/* Chat Header */}
@@ -173,23 +165,39 @@ function App() {
             </div>
 
             {/* Messages Area */}
-            <div className="messages-area" style={{ minHeight: 300, padding: 16, background: '#f9f9f9', borderRadius: 8 }}>
-              <div className="messages-container" style={{ minHeight: 200 }}>
+            <div className="messages-area">
+              <div className="messages-container">
+                {/* Debug logs commented out
                 {(() => {
                   console.log('🖥️ UI Render - currentChat:', currentChat);
                   console.log('🖥️ UI Render - messages:', currentChat?.messages);
                   console.log('🖥️ UI Render - messages length:', currentChat?.messages?.length);
                   return null;
                 })()}
-                {currentChat.messages?.length === 0 ? (
+                */}
+                {currentChat.messages?.filter(msg => msg.content && msg.content.trim()).length === 0 ? (
                   <div className="empty-chat">
                     <div className="empty-chat-content">
                       <h3>👋 Start a conversation</h3>
                       <p>Type a message below to get started!</p>
+                      <div className="empty-chat-suggestions">
+                        <div className="suggestion-item" onClick={() => setMessage("Hello! How can you help me today?")}>
+                          <span className="suggestion-icon">💬</span>
+                          <span className="suggestion-text">Say hello</span>
+                        </div>
+                        <div className="suggestion-item" onClick={() => setMessage("Can you explain how this chatbot works?")}>
+                          <span className="suggestion-icon">❓</span>
+                          <span className="suggestion-text">Ask about features</span>
+                        </div>
+                        <div className="suggestion-item" onClick={() => setMessage("Help me write a professional email")}>
+                          <span className="suggestion-icon">✍️</span>
+                          <span className="suggestion-text">Get help writing</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  currentChat.messages?.map((msg, index) => (
+                  currentChat.messages?.filter(msg => msg.content && msg.content.trim()).map((msg, index) => (
                     <div key={msg.id || index} className="message-wrapper">
                       <div
                         className={`message-container ${
@@ -336,12 +344,21 @@ function App() {
             <div className="welcome-content">
               <h1>💬 Welcome to ChatBot</h1>
               <p>Select a chat from the sidebar or create a new one to get started</p>
-              <button 
-                onClick={handleCreateNewChat}
-                className="welcome-button"
-              >
-                ➕ Start New Chat
-              </button>
+              
+              <div className="welcome-actions">
+                <button 
+                  onClick={handleCreateNewChat}
+                  className="welcome-button primary"
+                >
+                  ➕ Start New Chat
+                </button>
+                <button 
+                  onClick={() => setShowTemplateManager(true)}
+                  className="welcome-button secondary"
+                >
+                  📋 Browse Templates
+                </button>
+              </div>
               
               <div className="welcome-features">
                 <div className="feature">
@@ -356,6 +373,18 @@ function App() {
                   <span className="feature-icon">💾</span>
                   <span className="feature-text">Auto-save chat history</span>
                 </div>
+                <div className="feature">
+                  <span className="feature-icon">🏢</span>
+                  <span className="feature-text">Workspace management</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📋</span>
+                  <span className="feature-text">Prompt templates</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">⚙️</span>
+                  <span className="feature-text">Customizable settings</span>
+                </div>
               </div>
             </div>
           </div>
@@ -363,12 +392,14 @@ function App() {
       </div>
 
       {/* Settings Modal luôn render cùng cấp với app, không che mất các thành phần khác */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        settings={settings}
-        onUpdateSetting={updateSetting}
-      />
+      {showSettings && (
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          settings={settings}
+          onUpdateSetting={updateSetting}
+        />
+      )}
 
       {/* Workspace Manager Modal */}
       {showWorkspaceManager && (

@@ -131,6 +131,14 @@ export function WorkspaceSection({
           <h4 className="section-title">💬 Chats ({chats.length})</h4>
         </div>
         
+        {/* Debug logs */}
+        {(() => {
+          console.log('🏢 WorkspaceSection render - chats:', chats);
+          console.log('🏢 WorkspaceSection render - currentChatId:', currentChatId);
+          console.log('🏢 WorkspaceSection render - currentWorkspace:', currentWorkspace);
+          return null;
+        })()}
+        
         <div className="chats-list">
           {chats.length === 0 ? (
             <div className="empty-chats">
@@ -143,7 +151,10 @@ export function WorkspaceSection({
                 key={chat.id}
                 chat={chat}
                 isActive={chat.id === currentChatId}
-                onSelect={() => onSelectChat?.(chat.id)}
+                onSelect={() => {
+                  console.log('🖱️ ChatItem onSelect called:', { chatId: chat.id });
+                  onSelectChat?.(chat.id);
+                }}
                 onDelete={() => onDeleteChat?.(chat.id)}
                 onRename={(newTitle) => onRenameChat?.(chat.id, newTitle)}
               />

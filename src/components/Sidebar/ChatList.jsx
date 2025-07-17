@@ -59,7 +59,10 @@ export function ChatList({
         <div 
           key={chat.id}
           className={`chat-item ${currentChatId === chat.id ? 'active' : ''}`}
-          onClick={() => onSelectChat(chat.id)}
+          onClick={() => {
+            console.log('🖱️ Chat item clicked:', { chatId: chat.id, chat });
+            onSelectChat(chat.id);
+          }}
           title={isCollapsed ? chat.title : ''}
         >
           {isCollapsed ? (
