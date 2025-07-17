@@ -111,10 +111,8 @@
   flex-direction: column;
   height: 100vh;
   background: #ffffff;
-  border-left: 1px solid #e5e7eb;
   overflow: hidden;
   position: relative;
-  /* Debug để xem có hiển thị không */
   min-width: 0; /* Đảm bảo flex item có thể shrink */
 }
 
@@ -690,10 +688,325 @@
   font-size: 0.95rem;
 }
 
+/* Template Card */
+.template-card {
+  background: white !important;
+  border: 1px solid #e9ecef !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  height: fit-content !important;
+  min-height: 180px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.template-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+}
+
+.template-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Template Card Header */
+.template-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.template-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.template-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.template-card:hover .template-actions {
+  opacity: 1;
+}
+
+.template-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  color: #6c757d;
+}
+
+.template-action-btn:hover {
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.template-action-btn.danger:hover {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Template Description */
+.template-description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+/* Template Variables */
+.template-variables {
+  margin-bottom: 16px !important;
+}
+
+.variables-count {
+  font-size: 0.8rem !important;
+  color: #495057 !important;
+  font-weight: 500 !important;
+  margin-bottom: 8px !important;
+}
+
+.variables-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.variable-tag {
+  background: #e3f2fd !important;
+  color: #1565c0 !important;
+  padding: 2px 8px !important;
+  border-radius: 12px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  border: 1px solid #bbdefb !important;
+}
+
+/* Template Use Button */
+.template-use-btn {
+  width: 100% !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  margin-top: auto !important;
+}
+
+.template-use-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Template Usage Modal */
+.template-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.template-preview {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.template-preview h4 {
+  margin: 0 0 12px 0;
+  color: #495057;
+  font-size: 1rem;
+}
+
+.template-content {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #495057;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Template Variables Section */
+.template-variables-section {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.template-variables-section h4 {
+  margin: 0 0 16px 0;
+  color: #495057;
+  font-size: 1rem;
+}
+
+.variable-input {
+  margin-bottom: 12px;
+}
+
+.variable-input label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.variable-input input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.variable-input input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Template Action Buttons */
+.template-actions-row {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+}
+
+.template-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.template-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.template-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.template-btn.secondary {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.template-btn.secondary:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+/* =============================================
+   TEMPLATE MANAGER STYLES
+   ============================================= */
+
+/* Template Manager Container */
+.prompt-template-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Template Header */
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  margin-bottom: 0px;
+  flex-shrink: 0;
+}
+
+.template-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.template-create-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.template-create-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Template Grid */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 0 5px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(100vh - 200px);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .app-container {
-    flex-direction: column; /* Stack vertically on mobile */
+    flex-direction: column; /* Stack vertically on tablet */
   }
   
   .sidebar {
@@ -770,21 +1083,40 @@
   .suggestion-text {
     font-size: 0.85rem;
   }
+  
+  /* Template Manager responsive */
+  .template-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .template-card {
+    min-height: 160px;
+  }
 }
 
 @media (max-width: 480px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
   .sidebar {
-    width: 100vw !important;
+    width: 100% !important;
     max-width: none !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 9999 !important;
-    height: 100vh !important;
+    height: auto !important;
+    min-height: 180px !important;
+    max-height: 35vh !important;
+    position: relative !important;
   }
   
   .sidebar-resize-handle {
     display: none;
+  }
+  
+  .main-area {
+    height: 65vh !important;
+    width: 100% !important;
+    min-width: 100% !important;
   }
   
   .workspace-section {
@@ -802,6 +1134,29 @@
   .footer-button {
     padding: 10px;
     font-size: 12px;
+  }
+  
+  /* Template Manager mobile */
+  .template-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .template-card {
+    min-height: 140px;
+    padding: 12px;
+  }
+  
+  .template-header {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  
+  .template-create-btn {
+    width: 100%;
+    max-width: 200px;
   }
 }
 
@@ -1643,65 +1998,25 @@
   }
 }
 
-@media (max-width: 480px) {
-  .sidebar {
-    width: 100vw !important;
-    max-width: none !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 9999 !important;
-    height: 100vh !important;
-  }
-  
-  .sidebar-resize-handle {
-    display: none;
-  }
-  
-  .workspace-section {
-    padding: 12px;
-  }
-  
-  .group-header {
-    padding: 10px;
-  }
-  
-  .chat-item {
-    padding: 8px;
-  }
-  
-  .footer-button {
-    padding: 10px;
-    font-size: 12px;
-  }
-}
-
 /* ===== LAYOUT FIX FOR APP CONTAINER ===== */
 .app-container {
-  display: flex !important;
-  flex-direction: row !important;
-  height: 100vh !important;
-  width: 100vw !important;
-  overflow: hidden !important;
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .app-container > .sidebar {
-  flex: 0 0 auto !important; /* Don't grow, don't shrink, auto basis */
-  width: 320px !important;
-  max-width: 320px !important;
+  flex: 0 0 auto; /* Don't grow, don't shrink, auto basis */
+  width: 320px;
+  max-width: 320px;
 }
 
 .app-container > .main-area {
-  flex: 1 1 auto !important; /* Grow, shrink, auto basis */
-  width: calc(100vw - 320px) !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-}
-
-/* Debug cho main area */
-.main-area {
-  border: 2px solid blue !important;
-  background: yellow !important;
+  flex: 1 1 auto; /* Grow, shrink, auto basis */
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Modal Styles - Modern & Beautiful */
@@ -1827,7 +2142,7 @@
 
 /* Modal Body */
 .modal-body {
-  padding: 28px;
+  padding: 20px;
   overflow-y: auto;
   max-height: calc(90vh - 120px);
   scrollbar-width: thin;
