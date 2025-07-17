@@ -1,5 +1,6 @@
 /* Import component styles */
 @import './components/components.css';
+@import './styles/components.css';
 
 /* Global styles */
 * {
