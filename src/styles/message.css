@@ -1,0 +1,239 @@
+/* =============================================
+   MESSAGE STYLES
+   ============================================= */
+
+/* Message Wrapper */
+.message-wrapper {
+  margin-bottom: 24px;
+}
+
+.message-wrapper:last-child {
+  margin-bottom: 0;
+}
+
+/* Message Container */
+.message-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.message-container.user {
+  flex-direction: row-reverse;
+}
+
+.message-container.assistant {
+  flex-direction: row;
+}
+
+/* Message Avatar */
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.message-container.user .message-avatar {
+  background: var(--primary-color);
+  color: white;
+}
+
+.message-container.assistant .message-avatar {
+  background: var(--success-color);
+  color: white;
+}
+
+/* Message Bubble */
+.message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.message-bubble.user {
+  background: var(--primary-color);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.assistant {
+  background: var(--hover-color);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.message-bubble.loading {
+  background: var(--hover-color);
+  border: 1px solid var(--border-color);
+}
+
+/* Message Text */
+.message-text {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* Markdown Content */
+.markdown-content {
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.markdown-content p {
+  margin: 0 0 12px 0;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3 {
+  margin: 16px 0 8px 0;
+  color: var(--text-primary);
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-content li {
+  margin: 4px 0;
+}
+
+.markdown-content code {
+  background: #f1f5f9;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background: #1e1e1e;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: #9ca3af;
+  border-radius: 50%;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Message Actions */
+.message-actions-inline-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.message-actions-inline-wrapper.user {
+  flex-direction: row-reverse;
+}
+
+.message-actions-inline-wrapper.assistant {
+  flex-direction: row;
+}
+
+.message-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.message-actions-inline:hover {
+  opacity: 1;
+}
+
+.message-action-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.message-action-item:hover {
+  background: var(--hover-color);
+  color: var(--text-primary);
+}
+
+.message-action-item.danger:hover {
+  background: #fef2f2;
+  color: var(--danger-color);
+}
+
+.message-action-icon {
+  font-size: 0.875rem;
+}
+
+.message-action-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.message-timestamp {
+  opacity: 0.7;
+  font-size: 0.7rem;
+}
+
+/* Responsive Messages */
+@media (max-width: 768px) {
+  .message-bubble {
+    max-width: 85%;
+  }
+}

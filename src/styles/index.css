@@ -1,0 +1,33 @@
+/* =============================================
+   STYLES INDEX - Central import file
+   ============================================= */
+
+/* Base styles - Global variables, reset, utilities */
+@import './base.css';
+
+/* Layout components */
+@import './sidebar.css';
+@import './chat.css';
+@import './message.css';
+
+/* UI components */
+@import './modal.css';
+@import './forms.css';
+
+/* Feature-specific styles */
+@import './workspace.css';
+@import './template.css';
+@import './settings.css';
+
+/* 
+Organization:
+- base.css: CSS variables, global reset, utilities, layout containers
+- sidebar.css: Sidebar layout, navigation, workspace selector
+- chat.css: Main chat area, headers, input area, welcome screen
+- message.css: Message bubbles, actions, typing indicators
+- modal.css: Modal overlays, headers, animations
+- forms.css: Form inputs, validation, buttons
+- workspace.css: Workspace management, groups, chat lists
+- template.css: Template manager, cards, usage modals
+- settings.css: Settings modal, toggles, API configuration
+*/

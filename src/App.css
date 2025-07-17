@@ -1,25 +1,4 @@
-/* App.css - Main application styles */
-/* Component styles are imported in index.css */
+/* App.css - Minimal app-specific styles */
+/* Main component styles are now organized in src/styles/ */
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-/* App container - main layout */
-.app-container {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background-color: #f8fafc;
-  overflow: hidden;
-  position: relative; /* Thêm position relative */
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-}
+/* Any app-specific overrides or custom styles can go here */
