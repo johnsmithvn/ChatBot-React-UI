@@ -54,8 +54,9 @@ export function ChatList({
   }
 
   return (
-    <div className="chat-list">
-      {chats.map(chat => (
+    <div className="chat-list-container">
+      <div className="chat-list">
+        {chats.map(chat => (
         <div 
           key={chat.id}
           className={`chat-item ${currentChatId === chat.id ? 'active' : ''}`}
@@ -132,6 +133,7 @@ export function ChatList({
           )}
         </div>
       ))}
+      </div>
     </div>
   );
 }

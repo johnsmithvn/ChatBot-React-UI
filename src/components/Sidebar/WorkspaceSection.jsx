@@ -1,5 +1,6 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect } from 'react';
 import { WorkspaceInfo } from './WorkspaceInfo';
+import { ChatList } from './ChatList';
 
 /**
  * WorkspaceSection - Hiển thị workspace structure trong sidebar (simplified without groups)
@@ -131,36 +132,15 @@ export function WorkspaceSection({
           <h4 className="section-title">💬 Chats ({chats.length})</h4>
         </div>
         
-        {/* Debug logs */}
-        {(() => {
-          console.log('🏢 WorkspaceSection render - chats:', chats);
-          console.log('🏢 WorkspaceSection render - currentChatId:', currentChatId);
-          console.log('🏢 WorkspaceSection render - currentWorkspace:', currentWorkspace);
-          return null;
-        })()}
-        
-        <div className="chats-list">
-          {chats.length === 0 ? (
-            <div className="empty-chats">
-              <p>No chats in this workspace</p>
-              <p className="empty-hint">Create a new chat to get started</p>
-            </div>
-          ) : (
-            chats.map(chat => (
-              <ChatItem
-                key={chat.id}
-                chat={chat}
-                isActive={chat.id === currentChatId}
-                onSelect={() => {
-                  console.log('🖱️ ChatItem onSelect called:', { chatId: chat.id });
-                  onSelectChat?.(chat.id);
-                }}
-                onDelete={() => onDeleteChat?.(chat.id)}
-                onRename={(newTitle) => onRenameChat?.(chat.id, newTitle)}
-              />
-            ))
-          )}
-        </div>
+        {/* Use ChatList component with scroll */}
+        <ChatList
+          chats={chats}
+          currentChatId={currentChatId}
+          onSelectChat={onSelectChat}
+          onDeleteChat={onDeleteChat}
+          onRenameChat={onRenameChat}
+          isCollapsed={false}
+        />
       </div>
 
       {/* Workspace Info Modal */}
@@ -171,97 +151,3 @@ export function WorkspaceSection({
     </div>
   );
 }
-
-/**
- * ChatItem - Individual chat item component with enhanced formatting
- */
-const ChatItem = memo(function ChatItem({ chat, isActive, onSelect, onDelete, onRename }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(chat.title);
-
-  const handleRename = () => {
-    if (editTitle.trim() && editTitle !== chat.title) {
-      onRename(editTitle.trim());
-    }
-    setIsEditing(false);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleRename();
-    } else if (e.key === 'Escape') {
-      setEditTitle(chat.title);
-      setIsEditing(false);
-    }
-  };
-
-  const getTimeAgo = () => {
-    if (!chat.updatedAt) return '';
-    const now = new Date();
-    const updated = new Date(chat.updatedAt);
-    const diffInHours = Math.floor((now - updated) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    return new Date(chat.updatedAt).toLocaleDateString();
-  };
-
-  return (
-    <div className={`chat-item enhanced ${isActive ? 'active' : ''}`}>
-      <div className="chat-content" onClick={onSelect}>
-        <div className="chat-main">
-          <div className="chat-icon">💬</div>
-          <div className="chat-info">
-            {isEditing ? (
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={handleRename}
-                onKeyPress={handleKeyPress}
-                className="chat-title-input"
-                autoFocus
-              />
-            ) : (
-              <>
-                <div className="chat-title">{chat.title}</div>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="chat-meta">
-          <span className="chat-time">{getTimeAgo()}</span>
-          <span className="chat-message-count">{(chat.messages && chat.messages.length) || 0}</span>
-        </div>
-      </div>
-      
-      <div className="chat-actions">
-        <button
-          className="chat-action-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsEditing(true);
-          }}
-          title="Rename chat"
-        >
-          ✏️
-        </button>
-        <button
-          className="chat-action-btn danger"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (confirm('Are you sure you want to delete this chat?')) {
-              onDelete();
-            }
-          }}
-          title="Delete chat"
-        >
-          🗑️
-        </button>
-      </div>
-    </div>
-  );
-});
