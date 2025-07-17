@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
@@ -55,6 +55,16 @@ function App() {
     deleteMessage,
     
   } = useChats(settings, currentWorkspace?.id, currentWorkspace);
+
+  // Ref cho messages container để auto scroll
+  const messagesEndRef = useRef(null);
+
+  // Auto scroll xuống cuối khi có tin nhắn mới
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentChat?.messages, isLoading]);
 
   // Khởi tạo workspace mặc định
   useEffect(() => {
@@ -205,14 +215,34 @@ function App() {
                         }`}
                       >
                         {msg.role === 'assistant' && (
-                          <div className="message-avatar">
-                            <span className="avatar-icon">🤖</span>
+                          <div className="message-avatar-wrapper">
+                            <div className="message-avatar">
+                              <span className="avatar-icon">🤖</span>
+                            </div>
+                            {settings.showTimestamps && (
+                              <div className="message-timestamp">
+                                {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
 
                         {msg.role === 'user' && (
-                          <div className="message-avatar">
-                            <span className="avatar-icon">👤</span>
+                          <div className="message-avatar-wrapper">
+                            <div className="message-avatar">
+                              <span className="avatar-icon">👤</span>
+                            </div>
+                            {settings.showTimestamps && (
+                              <div className="message-timestamp">
+                                {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -250,7 +280,7 @@ function App() {
                         </div>
                       </div>
 
-                      {/* Message Actions và Timestamp dưới message container */}
+                      {/* Message Actions dưới message container */}
                       <div className={`message-actions-inline-wrapper ${msg.role}`}> 
                         <MessageActions
                           message={msg}
@@ -266,28 +296,21 @@ function App() {
                             }
                           }}
                         />
-                        
-                        {settings.showTimestamps && (
-                          <div className="message-timestamp">
-                            {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))
                 )}
 
-                {/* Loading indicator */}
+                {/* Loading indicator - chỉ 3 chấm */}
                 {isLoading && (
-                  <div className="message-container assistant">
-                    <div className="message-avatar">
-                      <span className="avatar-icon">🤖</span>
-                    </div>
-                    <div className="message-bubble assistant loading">
-                      <div className="typing-indicator">
+                  <div className="message-wrapper">
+                    <div className="message-container assistant">
+                      <div className="message-avatar-wrapper">
+                        <div className="message-avatar">
+                          <span className="avatar-icon">🤖</span>
+                        </div>
+                      </div>
+                      <div className="typing-indicator-standalone">
                         <span></span>
                         <span></span>
                         <span></span>
@@ -295,6 +318,9 @@ function App() {
                     </div>
                   </div>
                 )}
+
+                {/* Auto scroll target */}
+                <div ref={messagesEndRef} />
               </div>
             </div>
 
