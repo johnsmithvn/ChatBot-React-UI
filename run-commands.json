@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "npm run dev",
+    "test": "echo \"No tests specified\" && exit 0",
+    "clean": "rm -rf node_modules dist .vite",
+    "setup": "npm install && npm run build",
+    "start-windows": "start.bat",
+    "start-powershell": "powershell -ExecutionPolicy Bypass -File start.ps1"
+  },
+  "shortcuts": {
+    "Quick Start": "npm run start",
+    "Clean Install": "npm run clean && npm install",
+    "Production Build": "npm run build && npm run preview"
+  }
+}

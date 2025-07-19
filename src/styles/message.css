@@ -1,0 +1,318 @@
+/* =============================================
+   MESSAGE STYLES
+   ============================================= */
+
+/* Message Wrapper */
+.message-wrapper {
+  margin-bottom: 24px;
+}
+
+.message-wrapper:last-child {
+  margin-bottom: 0;
+}
+
+/* Message Container */
+.message-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.message-container.user {
+  flex-direction: row-reverse;
+}
+
+.message-container.assistant {
+  flex-direction: row;
+}
+
+/* Message Avatar */
+.message-avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.message-container.user .message-avatar {
+  background: var(--primary-color);
+  color: white;
+}
+
+.message-container.assistant .message-avatar {
+  background: var(--success-color);
+  color: white;
+}
+
+/* Message Bubble */
+.message-bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.message-bubble.user {
+  background: var(--primary-color);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.assistant {
+  background: var(--hover-color);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.message-bubble.loading {
+  background: linear-gradient(135deg, var(--background-light) 0%, var(--hover-color) 100%);
+  border: 1px solid var(--primary-color-light);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  animation: loadingPulse 2s infinite ease-in-out;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-bubble.loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    border-color: var(--primary-color-light);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+    border-color: var(--primary-color);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Message Text */
+.message-text {
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* Markdown Content */
+.markdown-content {
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.markdown-content p {
+  margin: 0 0 12px 0;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content h1, 
+.markdown-content h2, 
+.markdown-content h3 {
+  margin: 16px 0 8px 0;
+  color: var(--text-primary);
+}
+
+.markdown-content ul, 
+.markdown-content ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-content li {
+  margin: 4px 0;
+}
+
+.markdown-content code {
+  background: #f1f5f9;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background: #1e1e1e;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+/* Typing Indicator - Enhanced */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+/* Standalone Typing Indicator - chỉ 3 chấm không có bubble */
+.typing-indicator-standalone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  margin-left: 8px;
+}
+
+.typing-indicator span,
+.typing-indicator-standalone span {
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  border-radius: 50%;
+  animation: typing 1.6s infinite ease-in-out;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+  transform: scale(0);
+}
+
+.typing-indicator span:nth-child(1),
+.typing-indicator-standalone span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-indicator span:nth-child(2),
+.typing-indicator-standalone span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3),
+.typing-indicator-standalone span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: scale(1.4);
+    opacity: 1;
+    box-shadow: 0 3px 8px rgba(59, 130, 246, 0.6);
+  }
+}
+
+/* Message Actions */
+.message-actions-inline-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-left: 44px; /* Avatar width (36px) + gap (12px) - small adjust */
+}
+
+.message-actions-inline-wrapper.user {
+  flex-direction: row-reverse;
+  margin-left: 0;
+  margin-right: 44px; /* Align với avatar bên phải */
+}
+
+.message-actions-inline-wrapper.assistant {
+  flex-direction: row;
+  margin-left: 44px; /* Align với bubble bên trái */
+}
+
+.message-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.message-actions-inline:hover {
+  opacity: 1;
+}
+
+.message-action-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.message-action-item:hover {
+  background: var(--hover-color);
+  color: var(--text-primary);
+}
+
+.message-action-item.danger:hover {
+  background: #fef2f2;
+  color: var(--danger-color);
+}
+
+.message-action-icon {
+  font-size: 0.875rem;
+}
+
+.message-action-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Message Timestamp - Positioned below avatar */
+.message-timestamp {
+  opacity: 0.7;
+  font-size: 0.7rem;
+  margin-top: 4px;
+  text-align: center;
+  color: var(--text-secondary);
+  line-height: 1.2;
+}
+
+/* Responsive Messages */
+@media (max-width: 768px) {
+  .message-bubble {
+    max-width: 85%;
+  }
+}

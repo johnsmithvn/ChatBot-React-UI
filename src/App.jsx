@@ -1,286 +1,496 @@
-import { useEffect, useRef, useState } from "react";
-import CryptoJS from "crypto-js";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
-
-const secretKey = import.meta.env.VITE_ENCRYPTION_SECRET;
-const envApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-const encryptedKey = localStorage.getItem("user_api_key");
-const userApiKey = encryptedKey ? decryptKey(encryptedKey) : null;
-
-function encryptKey(rawKey) {
-  return CryptoJS.AES.encrypt(rawKey, secretKey).toString();
-}
-
-function decryptKey(encryptedKey) {
-  try {
-    const bytes = CryptoJS.AES.decrypt(encryptedKey, secretKey);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch (e) {
-    console.error("Không giải mã được API key:", e);
-    return null;
-  }
-}
-
-function isBotMessage(msg) {
-  return msg.role === "assistant";
-}
-
-// System message chung cho cả OpenAI và Local Model
-const SYSTEM_MESSAGE = {
-  role: "system",
-  content: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
-
-🎯 **Quy tắc định dạng:**
-- Sử dụng **bold** cho từ khóa quan trọng
-- Sử dụng \`inline code\` cho tên function, variable, command
-- Sử dụng \`\`\`language cho code blocks với ngôn ngữ cụ thể
-- Sử dụng ## cho headers chính, ### cho sub-headers  
-- Sử dụng - hoặc 1. cho lists
-- Sử dụng > cho blockquotes khi cần nhấn mạnh
-- Sử dụng | | cho tables khi trình bày data
-
-📝 **Ví dụ format tốt:**
-## Giải pháp
-Để tạo **function tính giai thừa**, bạn có thể sử dụng:
-
-### Cách 1: Đệ quy
-\`\`\`javascript
-function factorial(n) {
-  if (n <= 1) return 1;
-  return n * factorial(n - 1);
-}
-\`\`\`
-
-### Cách 2: Vòng lặp  
-\`\`\`javascript
-function factorial(n) {
-  let result = 1;
-  for (let i = 2; i <= n; i++) {
-    result *= i;
-  }
-  return result;
-}
-\`\`\`
-
-Hãy luôn format đẹp để dễ đọc!`
-};
-
-// 🧠 Gọi LM Studio
-async function callLocalModel(chatHistory, userMessage) {
-  const model = "local-model-name"; // Đổi thành tên model local thật sự
-
-  const messages = [SYSTEM_MESSAGE, ...chatHistory, userMessage];
-  if (!messages.length) throw new Error("🛑 Không có message để gửi!");
-
-  const res = await fetch("/api/local/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages }),
-  });
-
-  const data = await res.json();
-  if (!data.choices || !data.choices[0]) {
-    throw new Error("❌ Phản hồi từ LM Studio không hợp lệ");
-  }
-
-  return data.choices[0].message.content;
-}
-
-// 🌐 Gọi OpenAI
-async function callOpenAI(chatHistory, userMessage) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${userApiKey || envApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [SYSTEM_MESSAGE, ...chatHistory, userMessage],
-    }),
-  });
-  const data = await res.json();
-  return (
-    data.choices?.[0]?.message?.content || "❌ Không có phản hồi từ OpenAI."
-  );
-}
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { SettingsModal } from './components/Settings/SettingsModal';
+import { TokenUsage } from './components/TokenUsage/TokenUsage';
+import { MessageActions } from './components/MessageActions/MessageActions';
+import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
+import { PromptTemplateManager } from './components/PromptTemplateManager/PromptTemplateManager';
+import { WorkspacePromptModal } from './components/WorkspacePrompt/WorkspacePromptModal';
+import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
+import { useChats } from './hooks/useChats';
+import { useSettings } from './hooks/useSettings';
+import { useWorkspace } from './hooks/useWorkspace';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 function App() {
-  const [message, setMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
-  const [useLocalModel, setUseLocalModel] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
+  const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
+  
+  // Custom hooks
+  const { settings, updateSetting } = useSettings();
+  
+  // Workspace management
+  const {
+    workspaces,
+    currentWorkspace,
+    createWorkspace,
+    updateWorkspace,
+    deleteWorkspace,
+    selectWorkspace,
+    updateWorkspacePrompt,
+    initializeDefaultWorkspace,
+    promptTemplates,
+    createPromptTemplate,
+    updatePromptTemplate,
+    deletePromptTemplate
+  } = useWorkspace();
+  
+  const {
+    chats,
+    currentChat,
+    currentChatId,
+    isLoading,
+    createNewChat,
+    switchToChat,
+    deleteChat,
+    updateChatTitle,
+    sendMessage,
+    // Message actions
+    regenerateResponse,
+    
+    
+    deleteMessage,
+    
+  } = useChats(settings, currentWorkspace?.id, currentWorkspace);
+
+  // Ref cho messages container để auto scroll
   const messagesEndRef = useRef(null);
 
-  const submitForm = async (e) => {
+  // Auto scroll xuống cuối khi có tin nhắn mới
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentChat?.messages, isLoading]);
+
+  // Khởi tạo workspace mặc định
+  useEffect(() => {
+    initializeDefaultWorkspace();
+  }, [initializeDefaultWorkspace]);
+
+  // Toggle sidebar
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(prev => !prev);
+    updateSetting('sidebarCollapsed', !sidebarCollapsed);
+  };
+
+  // Chat input state
+  const [message, setMessage] = useState('');
+
+  // Handle send message
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isLoading) return;
 
-    const userMessage = { role: "user", content: message };
-    const thinkingMsg = {
-      role: "assistant",
-      content: "🤖 Đang nghĩ trả lời...",
-    };
+    const messageToSend = message.trim();
+    setMessage('');
+    
+    console.log('📤 handleSendMessage - currentWorkspace:', currentWorkspace);
+    console.log('📤 handleSendMessage - currentWorkspace.systemPrompt:', currentWorkspace?.systemPrompt);
+    
+    // Sử dụng system prompt từ workspace
+    const systemPrompt = currentWorkspace?.systemPrompt || null;
+    console.log('📤 handleSendMessage - final systemPrompt:', systemPrompt);
+    
+    await sendMessage(messageToSend, systemPrompt);
+  };
 
-    setChatHistory((prev) => [...prev, userMessage, thinkingMsg]);
-    setMessage("");
+  // Wrapper function để tạo chat mới
+  const handleCreateNewChat = useCallback(() => {
+    console.log('🆕 handleCreateNewChat called');
+    console.log('🆕 currentWorkspace:', currentWorkspace);
+    console.log('🆕 createNewChat function exists:', !!createNewChat);
+    const newChat = createNewChat();
+    console.log('🆕 newChat created:', newChat);
+    return newChat;
+  }, [createNewChat, currentWorkspace]);
 
-    try {
-      const responseText = useLocalModel
-        ? await callLocalModel(chatHistory, userMessage)
-        : await callOpenAI(chatHistory, userMessage);
-
-      const botMessage = { role: "assistant", content: responseText };
-      setChatHistory((prev) => [...prev.slice(0, -1), botMessage]); // remove thinkingMsg
-    } catch (err) {
-      console.error("❌ Gọi API lỗi:", err);
-      setChatHistory((prev) => [
-        ...prev.slice(0, -1),
-        {
-          role: "assistant",
-          content:
-            "❌ Không kết nối được model. Kiểm tra lại API hoặc local server.",
-        },
-      ]);
+  // Function để tạo chat mới trong group cụ thể
+  // Handle input keypress
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
     }
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory]);
-
   return (
-    <div className="min-h-screen flex items-start justify-center bg-gray-100 px-4 py-8">
-      <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-screen-xl flex flex-col">
-        <h1 className="text-3xl font-bold mb-2 text-center">💬 Chat với GPT</h1>
-       <div className="text-xs text-center text-gray-500 mb-4 space-y-1">
-  <p>
-    Đang dùng:{" "}
-    <span className="font-mono bg-gray-200 px-2 py-1 rounded">
-      {useLocalModel
-        ? "Local Model (LM Studio)"
-        : userApiKey
-        ? "User Key (🔐)"
-        : "ENV Key"}
-    </span>
-  </p>
-  <p>
-    🧠 Hệ thống đang sử dụng:{" "}
-    <span className="font-mono bg-yellow-100 px-2 py-1 rounded text-gray-800">
-      {useLocalModel
-        ? "⚡ Local Model từ LM Studio"
-        : userApiKey
-        ? "🔐 OpenAI (User Key)"
-        : "🌐 OpenAI (ENV Key)"}
-    </span>
-  </p>
-</div>
+    <div className="app-container">
+      {/* Sidebar */}
+      <Sidebar
+        chats={chats}
+        currentChatId={currentChatId}
+        onNewChat={handleCreateNewChat}
+        onSelectChat={switchToChat}
+        onDeleteChat={deleteChat}
+        onRenameChat={updateChatTitle}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={handleToggleSidebar}
+        onSettingsClick={() => {
+          console.log("Settings button clicked, current state:", showSettings);
+          setShowSettings(true);
+        }}
+        onWorkspaceClick={() => setShowWorkspaceManager(true)}
+        onTemplateClick={() => setShowTemplateManager(true)}
+        // Workspace props
+        workspaces={workspaces}
+        currentWorkspace={currentWorkspace}
+        onSelectWorkspace={selectWorkspace}
+        onOpenPromptModal={() => setShowPromptModal(true)}
+        onOpenWorkspaceInfo={() => setShowWorkspaceInfo(true)}
+      />
 
-
-        <div className="flex justify-center flex-wrap gap-4 mb-4 text-sm">
-          <button
-            onClick={() => {
-              const newKey = prompt("Nhập OpenAI API Key của bạn:");
-              if (newKey) {
-                localStorage.setItem("user_api_key", encryptKey(newKey));
-                window.location.reload();
-              }
-            }}
-            className="text-blue-600 underline"
-          >
-            Nhập key thủ công
-          </button>
-          <button
-            onClick={() => {
-              localStorage.removeItem("user_api_key");
-              window.location.reload();
-            }}
-            className="text-red-600 underline"
-          >
-            Dùng lại key mặc định
-          </button>
-          <button
-            onClick={() => setUseLocalModel((prev) => !prev)}
-            className="text-purple-600 underline"
-          >
-            Chuyển sang {useLocalModel ? "OpenAI" : "Local Model"}
-          </button>
-        </div>
-
-        <form onSubmit={submitForm} className="flex mb-4 w-full">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Nhập tin nhắn..."
-            className="flex-grow p-2 border border-gray-300 rounded-l"
-          />
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600"
-          >
-            Gửi
-          </button>
-        </form>
-
-        {/* Scrollable Chat Box */}
-        <div className="flex-grow overflow-hidden">
-          <div
-            className="overflow-y-auto bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3"
-            style={{
-              maxHeight: "calc(100vh - 300px)", // Chiếm gần full màn
-              minHeight: "400px", // Đảm bảo tối thiểu nhìn rõ
-            }}
-          >
-            {chatHistory.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex items-start gap-3 ${
-                  isBotMessage(msg) ? "justify-start" : "justify-end"
-                }`}
-              >
-                {isBotMessage(msg) && (
-                  <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    🤖
-                  </div>
-                )}
-                <div
-                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
-                    isBotMessage(msg)
-                      ? "bg-gray-50 text-left border border-gray-200 shadow-sm"
-                      : "bg-blue-600 text-white text-left"
-                  }`}
-                >
-                  {!isBotMessage(msg) && (
-                    <p className="font-semibold text-xs text-blue-200 mb-1">
-                      👤 Bạn
-                    </p>
-                  )}
-                  {isBotMessage(msg) ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  )}
-                </div>
-                {!isBotMessage(msg) && (
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    👤
+      {/* Main Chat Area */}
+      <div className="main-area">
+        {currentChat ? (
+          <>
+            {/* Chat Header */}
+            <div className="chat-header">
+              <h2 className="chat-title">{currentChat.title}</h2>
+              <div className="chat-info">
+                <span className="message-count">
+                  {currentChat.messages?.length || 0} messages
+                </span>
+                <span className="model-info">
+                  🤖 {settings.model}
+                </span>
+                
+                {/* Workspace System Prompt Info */}
+                {currentWorkspace?.systemPrompt && (
+                  <div className="workspace-prompt-info">
+                    <span className="prompt-active">🎯 Workspace Prompt Active</span>
                   </div>
                 )}
               </div>
-            ))}
-            <div ref={messagesEndRef} />
+            </div>
+
+            {/* Token Usage */}
+            <div className="token-usage-container">
+              <TokenUsage 
+                messages={currentChat.messages} 
+                contextTokens={settings.contextTokens}
+              />
+            </div>
+
+            {/* Messages Area */}
+            <div className="messages-area">
+              <div className="messages-container">
+                {/* Debug logs commented out
+                {(() => {
+                  console.log('🖥️ UI Render - currentChat:', currentChat);
+                  console.log('🖥️ UI Render - messages:', currentChat?.messages);
+                  console.log('🖥️ UI Render - messages length:', currentChat?.messages?.length);
+                  return null;
+                })()}
+                */}
+                {currentChat.messages?.filter(msg => msg.content && msg.content.trim()).length === 0 ? (
+                  <div className="empty-chat">
+                    <div className="empty-chat-content">
+                      <h3>👋 Start a conversation</h3>
+                      <p>Type a message below to get started!</p>
+                      <div className="empty-chat-suggestions">
+                        <div className="suggestion-item" onClick={() => setMessage("Hello! How can you help me today?")}>
+                          <span className="suggestion-icon">💬</span>
+                          <span className="suggestion-text">Say hello</span>
+                        </div>
+                        <div className="suggestion-item" onClick={() => setMessage("Can you explain how this chatbot works?")}>
+                          <span className="suggestion-icon">❓</span>
+                          <span className="suggestion-text">Ask about features</span>
+                        </div>
+                        <div className="suggestion-item" onClick={() => setMessage("Help me write a professional email")}>
+                          <span className="suggestion-icon">✍️</span>
+                          <span className="suggestion-text">Get help writing</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  currentChat.messages?.filter(msg => msg.content && msg.content.trim()).map((msg, index) => (
+                    <div key={msg.id || index} className="message-wrapper">
+                      <div
+                        className={`message-container ${
+                          msg.role === 'assistant' ? 'assistant' : 'user'
+                        }`}
+                      >
+                        {msg.role === 'assistant' && (
+                          <div className="message-avatar-wrapper">
+                            <div className="message-avatar">
+                              <span className="avatar-icon">🤖</span>
+                            </div>
+                            {settings.showTimestamps && (
+                              <div className="message-timestamp">
+                                {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {msg.role === 'user' && (
+                          <div className="message-avatar-wrapper">
+                            <div className="message-avatar">
+                              <span className="avatar-icon">👤</span>
+                            </div>
+                            {settings.showTimestamps && (
+                              <div className="message-timestamp">
+                                {new Date(msg.timestamp).toLocaleTimeString('vi-VN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className={`message-bubble ${msg.role}`}>
+                          {msg.role === 'assistant' ? (
+                            <div className="markdown-content">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  code({ inline, className, children, ...props }) {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    return !inline && match ? (
+                                      <SyntaxHighlighter
+                                        style={oneDark}
+                                        language={match[1]}
+                                        PreTag="div"
+                                        {...props}
+                                      >
+                                        {String(children).replace(/\n$/, '')}
+                                      </SyntaxHighlighter>
+                                    ) : (
+                                      <code className={className} {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  }
+                                }}
+                              >
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="message-text">{msg.content}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Message Actions dưới message container */}
+                      <div className={`message-actions-inline-wrapper ${msg.role}`}> 
+                        <MessageActions
+                          message={msg}
+                          onRegenerate={(message) => {
+                            const messageIndex = currentChat.messages.findIndex(msg => msg.id === message.id);
+                            if (messageIndex !== -1) {
+                              regenerateResponse(currentChatId, messageIndex);
+                            }
+                          }}
+                          onDelete={(message) => {
+                            if (confirm('Are you sure you want to delete this message?')) {
+                              deleteMessage(currentChatId, message.id);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+
+                {/* Loading indicator - chỉ 3 chấm */}
+                {isLoading && (
+                  <div className="message-wrapper">
+                    <div className="message-container assistant">
+                      <div className="message-avatar-wrapper">
+                        <div className="message-avatar">
+                          <span className="avatar-icon">🤖</span>
+                        </div>
+                      </div>
+                      <div className="typing-indicator-standalone">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Auto scroll target */}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Chat Input */}
+            <div className="chat-input-area">
+              <form onSubmit={handleSendMessage} className="chat-input-form">
+                <div className="input-container">
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                    className="message-input"
+                    disabled={isLoading}
+                    rows={1}
+                    onInput={(e) => {
+                      // Auto-resize textarea
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 200)}px`;
+                    }}
+                  />
+                  
+                  <button 
+                    type="submit"
+                    disabled={!message.trim() || isLoading}
+                    className="send-button"
+                    title="Send message"
+                  >
+                    {isLoading ? '⏳' : '📤'}
+                  </button>
+                </div>
+                
+                <div className="input-footer">
+                  <div className="input-hints">
+                    <span className="hint">💡 Press Shift+Enter for new line</span>
+                    <span className="char-count">
+                      {message.length}/4000
+                    </span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </>
+        ) : (
+          /* No chat selected */
+          <div className="no-chat-selected">
+            <div className="welcome-content">
+              <h1>💬 Welcome to ChatBot</h1>
+              <p>Select a chat from the sidebar or create a new one to get started</p>
+              
+              <div className="welcome-actions">
+                <button 
+                  onClick={handleCreateNewChat}
+                  className="welcome-button primary"
+                >
+                  ➕ Start New Chat
+                </button>
+                <button 
+                  onClick={() => setShowTemplateManager(true)}
+                  className="welcome-button secondary"
+                >
+                  📋 Browse Templates
+                </button>
+              </div>
+              
+              <div className="welcome-features">
+                <div className="feature">
+                  <span className="feature-icon">🤖</span>
+                  <span className="feature-text">AI-powered conversations</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📝</span>
+                  <span className="feature-text">Markdown support</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">💾</span>
+                  <span className="feature-text">Auto-save chat history</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🏢</span>
+                  <span className="feature-text">Workspace management</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">📋</span>
+                  <span className="feature-text">Prompt templates</span>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">⚙️</span>
+                  <span className="feature-text">Customizable settings</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Settings Modal luôn render cùng cấp với app, không che mất các thành phần khác */}
+      {showSettings && (
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          settings={settings}
+          onUpdateSetting={updateSetting}
+        />
+      )}
+
+      {/* Workspace Manager Modal */}
+      {showWorkspaceManager && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>🏢 Workspace Manager</h3>
+              <button className="modal-close" onClick={() => setShowWorkspaceManager(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <WorkspaceManager
+                workspaces={workspaces}
+                currentWorkspace={currentWorkspace}
+                onCreateWorkspace={createWorkspace}
+                onSelectWorkspace={selectWorkspace}
+                onUpdateWorkspace={updateWorkspace}
+                onDeleteWorkspace={deleteWorkspace}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Template Manager Modal */}
+      {showTemplateManager && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>📋 Template Manager</h3>
+              <button className="modal-close" onClick={() => setShowTemplateManager(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <PromptTemplateManager
+                templates={promptTemplates}
+                onSelectTemplate={(template) => {
+                  setMessage(template);
+                  setShowTemplateManager(false);
+                }}
+                onCreateTemplate={createPromptTemplate}
+                onUpdateTemplate={updatePromptTemplate}
+                onDeleteTemplate={deletePromptTemplate}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Workspace Prompt Modal */}
+      <WorkspacePromptModal
+        isOpen={showPromptModal}
+        onClose={() => setShowPromptModal(false)}
+        workspace={currentWorkspace}
+        onSave={updateWorkspacePrompt}
+      />
+
+      {/* Workspace Info Modal */}
+      <WorkspaceInfoModal
+        isOpen={showWorkspaceInfo}
+        onClose={() => setShowWorkspaceInfo(false)}
+      />
     </div>
   );
 }
