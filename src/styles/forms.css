@@ -350,3 +350,38 @@ input:checked + .slider:before {
     color: #f9fafb;
   }
 }
+
+/* =============================================
+   FORM ACTIONS
+   ============================================= */
+
+/* Form Actions - aligned with modal footer */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--background-light) 0%, #f8fafc 100%);
+  min-height: 64px;
+  align-items: center;
+  margin: 20px -28px -24px -28px;
+}
+
+/* Workspace and Group Forms */
+.workspace-form,
+.group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.workspace-form .form-group,
+.group-form .form-group {
+  margin-bottom: 20px;
+}
+
+.workspace-form .form-actions,
+.group-form .form-actions {
+  margin-top: auto;
+}

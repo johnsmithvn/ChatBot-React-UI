@@ -9,38 +9,17 @@ export function PromptTemplateManager({
   onSelectTemplate,
   onCreateTemplate,
   onUpdateTemplate,
-  onDeleteTemplate
+  onDeleteTemplate,
+  onClose
 }) {
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [variables, setVariables] = useState({});
 
   const handleSelectTemplate = useCallback((template) => {
-    setSelectedTemplate(template);
-    // Extract variables từ template
-    const templateVariables = extractVariables(template.template);
-    setVariables(templateVariables.reduce((acc, variable) => {
-      acc[variable] = '';
-      return acc;
-    }, {}));
-  }, []);
-
-  const handleUseTemplate = useCallback(() => {
-    if (!selectedTemplate) return;
-    
-    let processedTemplate = selectedTemplate.template;
-    
-    // Replace variables với values
-    Object.keys(variables).forEach(variable => {
-      const regex = new RegExp(`{{${variable}}}`, 'g');
-      processedTemplate = processedTemplate.replace(regex, variables[variable] || '');
-    });
-    
-    onSelectTemplate?.(processedTemplate);
-    setSelectedTemplate(null);
-    setVariables({});
-  }, [selectedTemplate, variables, onSelectTemplate]);
+    // Đóng template manager và mở use template modal
+    onClose?.();
+    onSelectTemplate?.(template);
+  }, [onClose, onSelectTemplate]);
 
   const allTemplates = [...Object.values(PROMPT_TEMPLATES), ...(templates || [])];
 
@@ -68,69 +47,6 @@ export function PromptTemplateManager({
           />
         ))}
       </div>
-
-      {/* Template Usage Modal */}
-      {selectedTemplate && (
-        <div className="modal-overlay">
-          <div className="modal-content large">
-            <div className="modal-header">
-              <h3> Use Template: {selectedTemplate.name}</h3>
-              <button className="modal-close" onClick={() => setSelectedTemplate(null)}>
-                ✕
-              </button>
-            </div>
-            
-            <div className="template-usage">
-              <div className="template-preview">
-                <h4>Template Preview</h4>
-                <div className="template-content">
-                  <pre>{selectedTemplate.template}</pre>
-                </div>
-              </div>
-              
-              <div className="template-variables">
-                <h4>Variables</h4>
-                {Object.keys(variables).map(variable => (
-                  <div key={variable} className="variable-input">
-                    <label>{variable}</label>
-                    <input
-                      type="text"
-                      value={variables[variable]}
-                      onChange={(e) => setVariables({
-                        ...variables,
-                        [variable]: e.target.value
-                      })}
-                      placeholder={`Enter ${variable}`}
-                    />
-                  </div>
-                ))}
-              </div>
-              
-              <div className="template-result">
-                <h4>Result</h4>
-                <div className="result-content">
-                  <pre>{generatePreview(selectedTemplate.template, variables)}</pre>
-                </div>
-              </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setSelectedTemplate(null)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleUseTemplate}
-              >
-                Use Template
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Create Template Modal */}
       {showCreateTemplate && (
@@ -337,4 +253,107 @@ function generatePreview(template, variables) {
   });
   
   return preview;
+}
+
+/**
+ * Component Use Template Modal độc lập
+ */
+export function UseTemplateModal({ 
+  template, 
+  onUse, 
+  onCancel 
+}) {
+  const [variables, setVariables] = useState({});
+
+  React.useEffect(() => {
+    if (template) {
+      const templateVariables = extractVariables(template.template);
+      setVariables(templateVariables.reduce((acc, variable) => {
+        acc[variable] = '';
+        return acc;
+      }, {}));
+    }
+  }, [template]);
+
+  const handleUseTemplate = useCallback(() => {
+    if (!template) return;
+    
+    let processedTemplate = template.template;
+    
+    // Replace variables với values
+    Object.keys(variables).forEach(variable => {
+      const regex = new RegExp(`{{${variable}}}`, 'g');
+      processedTemplate = processedTemplate.replace(regex, variables[variable] || '');
+    });
+    
+    onUse?.(processedTemplate);
+  }, [template, variables, onUse]);
+
+  if (!template) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content large">
+        <div className="modal-header">
+          <h3>🎯 Use Template: {template.name}</h3>
+          <button className="modal-close" onClick={onCancel}>
+            ✕
+          </button>
+        </div>
+        
+        <div className="modal-body">
+          <div className="template-usage">
+            <div className="template-preview">
+              <h4>Template Preview</h4>
+              <div className="template-content">
+                <pre>{template.template}</pre>
+              </div>
+            </div>
+            
+            {Object.keys(variables).length > 0 && (
+              <div className="template-variables">
+                <h4>🔧 Variables</h4>
+                {Object.keys(variables).map(variable => (
+                  <div key={variable} className="variable-input">
+                    <label>{variable}</label>
+                    <input
+                      type="text"
+                      value={variables[variable]}
+                      onChange={(e) => setVariables({
+                        ...variables,
+                        [variable]: e.target.value
+                      })}
+                      placeholder={`Enter ${variable}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="template-result">
+              <h4>📝 Result</h4>
+              <div className="result-content">
+                <pre>{generatePreview(template.template, variables)}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleUseTemplate}
+          >
+            Use Template
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

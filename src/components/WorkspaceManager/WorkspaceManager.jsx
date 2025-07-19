@@ -363,11 +363,11 @@ function WorkspaceForm({ workspace, onSubmit, onCancel }) {
             </select>
           </div>
           
-          <div className="form-actions">
-            <button type="button" onClick={onCancel} className="btn-secondary">
+          <div className="modal-footer">
+            <button type="button" onClick={onCancel} className="btn btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn btn-primary">
               {workspace ? 'Update' : 'Create'} Workspace
             </button>
           </div>
@@ -458,11 +458,11 @@ function GroupForm({ group, onSubmit, onCancel }) {
             </div>
           </div>
           
-          <div className="form-actions">
-            <button type="button" onClick={onCancel} className="btn-secondary">
+          <div className="modal-footer">
+            <button type="button" onClick={onCancel} className="btn btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn btn-primary">
               {group ? 'Update' : 'Create'} Group
             </button>
           </div>

@@ -4,7 +4,7 @@ import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
 import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
-import { PromptTemplateManager } from './components/PromptTemplateManager/PromptTemplateManager';
+import { PromptTemplateManager, UseTemplateModal } from './components/PromptTemplateManager/PromptTemplateManager';
 import { WorkspacePromptModal } from './components/WorkspacePrompt/WorkspacePromptModal';
 import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
 import { useChats } from './hooks/useChats';
@@ -20,6 +20,8 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [showUseTemplate, setShowUseTemplate] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
   
@@ -466,16 +468,34 @@ function App() {
               <PromptTemplateManager
                 templates={promptTemplates}
                 onSelectTemplate={(template) => {
-                  setMessage(template);
-                  setShowTemplateManager(false);
+                  setSelectedTemplate(template);
+                  setShowUseTemplate(true);
                 }}
                 onCreateTemplate={createPromptTemplate}
                 onUpdateTemplate={updatePromptTemplate}
                 onDeleteTemplate={deletePromptTemplate}
+                onClose={() => setShowTemplateManager(false)}
               />
             </div>
           </div>
         </div>
+      )}
+
+      {/* Use Template Modal */}
+      {showUseTemplate && selectedTemplate && (
+        <UseTemplateModal
+          template={selectedTemplate}
+          onUse={(processedTemplate) => {
+            setMessage(processedTemplate);
+            setShowUseTemplate(false);
+            setSelectedTemplate(null);
+          }}
+          onCancel={() => {
+            setShowUseTemplate(false);
+            setSelectedTemplate(null);
+            setShowTemplateManager(true);
+          }}
+        />
       )}
 
       {/* Workspace Prompt Modal */}
