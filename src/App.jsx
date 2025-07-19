@@ -34,7 +34,6 @@ function App() {
     currentWorkspace,
     createWorkspace,
     updateWorkspace,
-    deleteWorkspace,
     selectWorkspace,
     initializeDefaultWorkspace,
     promptTemplates,
@@ -92,21 +91,14 @@ function App() {
 
     const messageToSend = message.trim();
     setMessage('');
-    
-    console.log('📤 handleSendMessage - sending message:', messageToSend);
-    
     await sendMessage(messageToSend);
   };
 
   // Wrapper function để tạo chat mới
   const handleCreateNewChat = useCallback(() => {
-    console.log('🆕 handleCreateNewChat called');
-    console.log('🆕 currentWorkspace:', currentWorkspace);
-    console.log('🆕 createNewChat function exists:', !!createNewChat);
     const newChat = createNewChat();
-    console.log('🆕 newChat created:', newChat);
     return newChat;
-  }, [createNewChat, currentWorkspace]);
+  }, [createNewChat]);
 
   // Function để tạo chat mới trong group cụ thể
   // Handle input keypress
@@ -130,7 +122,6 @@ function App() {
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={handleToggleSidebar}
         onSettingsClick={() => {
-          console.log("Settings button clicked, current state:", showSettings);
           setShowSettings(true);
         }}
         onWorkspaceClick={() => {
@@ -185,11 +176,6 @@ function App() {
               <div className="messages-container">
                 {/* Debug logs commented out
                 {(() => {
-                  console.log('🖥️ UI Render - currentChat:', currentChat);
-                  console.log('🖥️ UI Render - messages:', currentChat?.messages);
-                  console.log('🖥️ UI Render - messages length:', currentChat?.messages?.length);
-                  return null;
-                })()}
                 */}
                 {currentChat.messages?.filter(msg => msg.content && msg.content.trim()).length === 0 ? (
                   <div className="empty-chat">

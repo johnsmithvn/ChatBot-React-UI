@@ -7,7 +7,6 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
   // Update tempSettings when settings change or modal opens
   useEffect(() => {
     if (isOpen && settings) {
-      console.log("SettingsModal: Updating tempSettings with", settings);
       setTempSettings({...settings});
     }
   }, [isOpen, settings]);
@@ -15,16 +14,9 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
   if (!isOpen) return null;
 
   const handleSave = () => {
-    // Log the settings before saving
-    console.log("SettingsModal: Saving settings", { tempSettings, currentSettings: settings });
-    
     // Cập nhật từng setting
     Object.keys(tempSettings).forEach(key => {
       if (JSON.stringify(tempSettings[key]) !== JSON.stringify(settings[key])) {
-        console.log(`SettingsModal: Updating setting ${key}`, { 
-          oldValue: settings[key], 
-          newValue: tempSettings[key] 
-        });
         onUpdateSetting(key, tempSettings[key]);
       }
     });
@@ -36,7 +28,6 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
     onClose();
   };
 
-  console.log('SettingsModal: Rendered with isOpen =', isOpen, 'settings =', settings);
   return (
     <div
       className="modal-overlay"

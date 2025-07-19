@@ -17,14 +17,12 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
   // Lấy chats của workspace hiện tại với useMemo để tối ưu
   const chats = useMemo(() => {
     const result = currentWorkspaceId ? (allChats[currentWorkspaceId] || []) : [];
-    console.log('🔄 useChats - chats recalculated:', { currentWorkspaceId, result });
     return result;
   }, [allChats, currentWorkspaceId]);
 
   // Tìm chat hiện tại
   const currentChat = useMemo(() => {
     const result = chats.find(chat => chat.id === currentChatId) || null;
-    console.log('🔄 useChats - currentChat recalculated:', { currentChatId, result });
     return result;
   }, [chats, currentChatId]);
 
@@ -32,14 +30,11 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
   const updateWorkspaceChats = useCallback((newChats) => {
     if (!currentWorkspaceId) return;
     
-    console.log('💾 updateWorkspaceChats called:', { currentWorkspaceId, newChats });
-    
     setAllChats(prev => {
       const updated = {
         ...prev,
         [currentWorkspaceId]: newChats
       };
-      console.log('💾 setAllChats updating:', { prev, updated });
       return updated;
     });
   }, [setAllChats, currentWorkspaceId]);
@@ -64,13 +59,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         (settings.model || 'gpt-4o-mini')
     };
     
-    console.log('🆕 Creating new chat:', newChat);
-    
     const newChats = [newChat, ...chats];
     updateWorkspaceChats(newChats);
     setCurrentChatId(newChat.id);
     
-    console.log('✅ New chat created and set as current:', { chatId: newChat.id, newChats });
     return newChat;
   }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId, settings.model, currentWorkspace?.apiSettings?.useCustomApiKey, currentWorkspace?.apiSettings?.model]);
 
@@ -99,8 +91,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
 
   // Gửi tin nhắn
   const sendMessage = useCallback(async (messageContent, systemPrompt = null) => {
-    console.log('🔥 sendMessage called with:', { messageContent, systemPrompt, currentWorkspaceId, currentChatId });
-    
     if (!currentWorkspaceId) {
       console.error('❌ No currentWorkspaceId');
       return;
@@ -118,16 +108,12 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       return;
     }
 
-    console.log('✅ Target chat found:', targetChat);
-
     const newMessage = {
       id: `msg_${Date.now()}`,
       content: messageContent,
       role: 'user',
       timestamp: new Date().toISOString()
     };
-
-    console.log('📨 New message created:', newMessage);
 
     const updatedChat = {
       ...targetChat,
@@ -138,13 +124,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     const updatedChats = chats.map(chat =>
       chat.id === targetChatId ? updatedChat : chat
     );
-
-    console.log('💾 Updating workspace chats:', updatedChats);
-    
-    // Check if the user message was added correctly
-    const checkChat = updatedChats.find(chat => chat.id === targetChatId);
-    console.log('🔍 Check chat after adding user message:', checkChat);
-    console.log('🔍 Check messages in chat:', checkChat?.messages);
     
     updateWorkspaceChats(updatedChats);
     setIsLoading(true);
@@ -154,12 +133,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       const limitedMessages = limitMessagesByTokensWithPrompt(updatedChat.messages, 4000);
       const apiMessages = prepareMessagesForAPI(limitedMessages);
 
-      console.log('🔑 API call preparation:', {
-        limitedMessages: limitedMessages.length,
-        apiMessages: apiMessages.length,
-        workspaceSettings: currentWorkspace?.settings
-      });
-
       // Tạo instance OpenAIService với API key từ workspace hoặc settings
       let apiKey, model;
       
@@ -167,20 +140,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.apiKey) {
         apiKey = currentWorkspace.apiSettings.apiKey;
         model = currentWorkspace.apiSettings.model || 'gpt-4o-mini';
-        console.log('🔑 Using workspace API configuration:', { 
-          hasApiKey: !!apiKey, 
-          apiKeyLength: apiKey?.length,
-          model: model 
-        });
       } else {
         // Fall back to global settings
         apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
         model = settings.model || 'gpt-4o-mini';
-        console.log('🔑 Using global API configuration:', { 
-          hasApiKey: !!apiKey, 
-          apiKeyLength: apiKey?.length,
-          model: model 
-        });
       }
       
       if (!apiKey) {
@@ -188,22 +151,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       }
       
       const openAIService = new OpenAIService(apiKey);
-
-      console.log('🚀 Calling OpenAI API...');
       
       // Build system prompt by combining all levels
       const buildSystemPrompt = () => {
         let finalSystemPrompt = '';
-        
-        // DEBUG: Log current workspace structure
-        console.log('🔍 DEBUG buildSystemPrompt:', {
-          currentWorkspace,
-          hasPersona: !!currentWorkspace?.persona,
-          hasCharacterDefinition: !!currentWorkspace?.persona?.characterDefinition,
-          characterDefinition: currentWorkspace?.persona?.characterDefinition,
-          globalSystemPrompt: settings?.globalSystemPrompt,
-          useGlobalSystemPrompt: currentWorkspace?.useGlobalSystemPrompt
-        });
         
         // 1. Global System Prompt từ user settings (only if workspace enables it)
         if (settings?.globalSystemPrompt && currentWorkspace?.useGlobalSystemPrompt !== false) {
@@ -221,16 +172,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
           if (finalSystemPrompt) finalSystemPrompt += '\n\n';
           finalSystemPrompt += systemPrompt;
         }
-        
-        console.log('🎯 Built system prompt:', {
-          hasGlobalSystemPrompt: !!settings?.globalSystemPrompt,
-          useGlobalSystemPrompt: currentWorkspace?.useGlobalSystemPrompt,
-          hasPersonaCharacterDefinition: !!currentWorkspace?.persona?.characterDefinition,
-          hasCustomPrompt: !!systemPrompt,
-          finalLength: finalSystemPrompt.length,
-          currentWorkspacePersona: currentWorkspace?.persona,
-          finalSystemPrompt: finalSystemPrompt.substring(0, 200) + '...'
-        });
         
         return finalSystemPrompt || null;
       };
@@ -250,8 +191,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         }
       );
 
-      console.log('✅ OpenAI API response:', response);
-
       const assistantMessage = {
         id: `msg_${Date.now() + 1}`,
         content: response.content,
@@ -259,8 +198,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         timestamp: new Date().toISOString(),
         usage: response.usage
       };
-
-      console.log('🤖 Assistant message created:', assistantMessage);
 
       // Cập nhật với phản hồi
       const finalChats = updatedChats.map(chat => {
@@ -276,7 +213,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         return chat;
       });
 
-      console.log('🎯 Final chats with assistant message:', finalChats);
       updateWorkspaceChats(finalChats);
       return response;
     } catch (error) {
@@ -387,47 +323,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     }
   }, [currentWorkspaceId, chats, updateWorkspaceChats, settings, currentWorkspace]);
 
-  // Edit message
-  const editMessage = useCallback((chatId, messageId, newContent) => {
-    if (!currentWorkspaceId) return;
-    
-    const updatedChats = chats.map(chat => {
-      if (chat.id === chatId) {
-        const updatedMessages = chat.messages.map(msg =>
-          msg.id === messageId ? { ...msg, content: newContent, edited: true } : msg
-        );
-        return { ...chat, messages: updatedMessages, updatedAt: new Date().toISOString() };
-      }
-      return chat;
-    });
-
-    updateWorkspaceChats(updatedChats);
-  }, [currentWorkspaceId, chats, updateWorkspaceChats]);
-
-  // Branch message
-  const branchMessage = useCallback((chatId, messageIndex) => {
-    if (!currentWorkspaceId) return;
-    
-    const sourceChat = chats.find(chat => chat.id === chatId);
-    if (!sourceChat) return;
-
-    const branchedMessages = sourceChat.messages.slice(0, messageIndex + 1);
-    const newChat = {
-      id: Date.now().toString(),
-      title: `${sourceChat.title} (Branch)`,
-      messages: branchedMessages,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      model: sourceChat.model,
-      parentChatId: chatId
-    };
-
-    const newChats = [newChat, ...chats];
-    updateWorkspaceChats(newChats);
-    setCurrentChatId(newChat.id);
-    return newChat;
-  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId]);
-
   // Delete message
   const deleteMessage = useCallback((chatId, messageId) => {
     if (!currentWorkspaceId) return;
@@ -443,37 +338,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     updateWorkspaceChats(updatedChats);
   }, [currentWorkspaceId, chats, updateWorkspaceChats]);
 
-  // Bookmark message
-  const bookmarkMessage = useCallback((chatId, messageId) => {
-    if (!currentWorkspaceId) return;
-    
-    const updatedChats = chats.map(chat => {
-      if (chat.id === chatId) {
-        const updatedMessages = chat.messages.map(msg =>
-          msg.id === messageId ? { ...msg, bookmarked: !msg.bookmarked } : msg
-        );
-        return { ...chat, messages: updatedMessages, updatedAt: new Date().toISOString() };
-      }
-      return chat;
-    });
-
-    updateWorkspaceChats(updatedChats);
-  }, [currentWorkspaceId, chats, updateWorkspaceChats]);
-
-  // Clear all chats
-  const clearAllChats = useCallback(() => {
-    if (!currentWorkspaceId) return;
-    
-    updateWorkspaceChats([]);
-    setCurrentChatId(null);
-  }, [currentWorkspaceId, updateWorkspaceChats, setCurrentChatId]);
-
   // Switch to chat
   const switchToChat = useCallback((chatId) => {
-    console.log('🔄 switchToChat called:', { chatId, currentChatId });
     setCurrentChatId(chatId);
-    console.log('✅ switchToChat completed, new currentChatId should be:', chatId);
-  }, [setCurrentChatId, currentChatId]);
+  }, [setCurrentChatId]);
 
   return {
     // State
@@ -491,12 +359,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     regenerateResponse,
 
     // Message actions
-    editMessage,
-    branchMessage,
-    deleteMessage,
-    bookmarkMessage,
-
-    // Utils
-    clearAllChats
+    deleteMessage
   };
 }
