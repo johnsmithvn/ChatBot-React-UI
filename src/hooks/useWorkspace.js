@@ -20,6 +20,26 @@ export function useWorkspace() {
   // Lấy workspace hiện tại
   const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId);
 
+  // Migrate old workspaces from systemPrompt to defaultPrompt
+  const migrateWorkspaces = useCallback(() => {
+    const needsMigration = workspaces.some(ws => ws.systemPrompt && !ws.defaultPrompt);
+    if (needsMigration) {
+      console.log('🔄 Migrating workspaces from systemPrompt to defaultPrompt');
+      const migratedWorkspaces = workspaces.map(ws => {
+        if (ws.systemPrompt && !ws.defaultPrompt) {
+          return {
+            ...ws,
+            defaultPrompt: ws.systemPrompt,
+            // Keep systemPrompt for backward compatibility but mark it as migrated
+            systemPrompt: undefined
+          };
+        }
+        return ws;
+      });
+      setWorkspaces(migratedWorkspaces);
+    }
+  }, [workspaces, setWorkspaces]);
+
   // Tạo workspace mặc định nếu chưa có
   const initializeDefaultWorkspace = useCallback(() => {
     console.log('🏗️ initializeDefaultWorkspace called, workspaces.length:', workspaces.length);
@@ -28,7 +48,7 @@ export function useWorkspace() {
         id: `workspace_${Date.now()}`,
         name: 'Default Workspace',
         description: 'Default workspace for testing',
-        systemPrompt: '',
+        defaultPrompt: '',
         persona: DEFAULT_PERSONAS.assistant,
         settings: {
           model: 'gpt-3.5-turbo',
@@ -46,8 +66,10 @@ export function useWorkspace() {
       console.log('✅ Default workspace created:', defaultWorkspace);
     } else {
       console.log('✅ Workspaces already exist:', workspaces);
+      // Run migration for existing workspaces
+      migrateWorkspaces();
     }
-  }, [workspaces, setWorkspaces, setCurrentWorkspaceId]);
+  }, [workspaces, setWorkspaces, setCurrentWorkspaceId, migrateWorkspaces]);
 
   // Tạo workspace mới (simplified structure)
   const createWorkspace = useCallback((workspaceData) => {
@@ -55,7 +77,7 @@ export function useWorkspace() {
       id: `workspace_${Date.now()}`,
       name: workspaceData.name,
       description: workspaceData.description,
-      systemPrompt: workspaceData.systemPrompt || '',
+      defaultPrompt: workspaceData.defaultPrompt || '',
       persona: workspaceData.persona || DEFAULT_PERSONAS.assistant,
       settings: {
         model: 'gpt-3.5-turbo',
@@ -98,9 +120,9 @@ export function useWorkspace() {
     setCurrentWorkspaceId(workspaceId);
   }, [setCurrentWorkspaceId]);
 
-  // Cập nhật system prompt của workspace
-  const updateWorkspacePrompt = useCallback((workspaceId, systemPrompt) => {
-    updateWorkspace(workspaceId, { systemPrompt });
+  // Cập nhật default prompt của workspace
+  const updateWorkspacePrompt = useCallback((workspaceId, defaultPrompt) => {
+    updateWorkspace(workspaceId, { defaultPrompt });
   }, [updateWorkspace]);
 
   // Cập nhật persona của workspace

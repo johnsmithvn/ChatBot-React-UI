@@ -7,16 +7,18 @@ export function WorkspacePromptModal({
   isOpen,
   onClose,
   workspace,
-  onSave
+  onSave,
+  settings // Add settings prop to get defaultWorkspacePrompt
 }) {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (workspace) {
-      setPrompt(workspace.systemPrompt || '');
+      // Use workspace defaultPrompt, fallback to settings defaultWorkspacePrompt
+      setPrompt(workspace.defaultPrompt || settings?.defaultWorkspacePrompt || '');
     }
-  }, [workspace]);
+  }, [workspace, settings]);
 
   const handleSave = async () => {
     try {
@@ -31,7 +33,8 @@ export function WorkspacePromptModal({
   };
 
   const handleCancel = () => {
-    setPrompt(workspace?.systemPrompt || '');
+    // Reset to current workspace defaultPrompt or settings default
+    setPrompt(workspace?.defaultPrompt || settings?.defaultWorkspacePrompt || '');
     onClose();
   };
 
@@ -65,7 +68,7 @@ export function WorkspacePromptModal({
               id="workspace-prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter system prompt for this workspace..."
+              placeholder={settings?.defaultWorkspacePrompt || "Enter system prompt for this workspace..."}
               className="prompt-textarea"
               rows={12}
               disabled={isLoading}

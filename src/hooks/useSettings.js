@@ -26,6 +26,8 @@ export function useSettings() {
     temperature: 0.7,
     maxTokens: 1000,
     contextTokens: CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS,
+    
+    // System Prompts
     systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
 
 🎯 **Quy tắc định dạng:**
@@ -37,7 +39,19 @@ export function useSettings() {
 - Sử dụng > cho blockquotes khi cần nhấn mạnh
 - Sử dụng | | cho tables khi trình bày data
 
-Hãy luôn format đẹp để dễ đọc!`
+Hãy luôn format đẹp để dễ đọc!`,
+
+    // Default Workspace Prompt
+    defaultWorkspacePrompt: `Bạn đang làm việc trong một workspace chuyên nghiệp. Hãy:
+
+📋 **Nguyên tắc làm việc:**
+- Tập trung vào context của workspace hiện tại
+- Đưa ra lời khuyên practical và actionable
+- Giải thích rõ ràng từng bước thực hiện
+- Suggest best practices trong domain này
+- Hỗ trợ troubleshooting khi gặp vấn đề
+
+💡 **Mục tiêu:** Trở thành trợ lý đắc lực giúp hoàn thành công việc hiệu quả!`
   });
 
   /**
@@ -75,7 +89,7 @@ Hãy luôn format đẹp để dễ đọc!`
       showTimestamps: true,
       markdownEnabled: true,
       temperature: 0.7,
-      maxTokens: 1000,
+      contextTokens: CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS,
       systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
 
 🎯 **Quy tắc định dạng:**
@@ -87,7 +101,18 @@ Hãy luôn format đẹp để dễ đọc!`
 - Sử dụng > cho blockquotes khi cần nhấn mạnh
 - Sử dụng | | cho tables khi trình bày data
 
-Hãy luôn format đẹp để dễ đọc!`
+Hãy luôn format đẹp để dễ đọc!`,
+
+      defaultWorkspacePrompt: `Bạn đang làm việc trong một workspace chuyên nghiệp. Hãy:
+
+📋 **Nguyên tắc làm việc:**
+- Tập trung vào context của workspace hiện tại
+- Đưa ra lời khuyên practical và actionable
+- Giải thích rõ ràng từng bước thực hiện
+- Suggest best practices trong domain này
+- Hỗ trợ troubleshooting khi gặp vấn đề
+
+💡 **Mục tiêu:** Trở thành trợ lý đắc lực giúp hoàn thành công việc hiệu quả!`
     });
   }, [setSettings]);
 

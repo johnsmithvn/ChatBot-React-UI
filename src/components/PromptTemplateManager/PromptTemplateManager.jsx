@@ -7,13 +7,11 @@ import { PROMPT_TEMPLATES } from '../../utils/constants';
 export function PromptTemplateManager({ 
   templates,
   onSelectTemplate,
-  onCreateTemplate,
-  onUpdateTemplate,
   onDeleteTemplate,
-  onClose
+  onClose,
+  onCreateClick,
+  onEditClick
 }) {
-  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState(null);
 
   const handleSelectTemplate = useCallback((template) => {
     // Đóng template manager và mở use template modal
@@ -27,9 +25,12 @@ export function PromptTemplateManager({
     <div className="prompt-template-manager">
       <div className="template-header">
         <h3>📋 Prompt Templates</h3>
-        <button
+        <button 
           className="template-create-btn"
-          onClick={() => setShowCreateTemplate(true)}
+          onClick={() => {
+            onClose?.();
+            onCreateClick?.();
+          }}
         >
           ➕ New Template
         </button>
@@ -41,35 +42,15 @@ export function PromptTemplateManager({
             key={template.id}
             template={template}
             onSelect={() => handleSelectTemplate(template)}
-            onEdit={() => setEditingTemplate(template)}
+            onEdit={() => {
+              onClose?.();
+              onEditClick?.(template);
+            }}
             onDelete={() => onDeleteTemplate?.(template.id)}
             isCustom={!Object.values(PROMPT_TEMPLATES).includes(template)}
           />
         ))}
       </div>
-
-      {/* Create Template Modal */}
-      {showCreateTemplate && (
-        <TemplateForm
-          onSubmit={(templateData) => {
-            onCreateTemplate?.(templateData);
-            setShowCreateTemplate(false);
-          }}
-          onCancel={() => setShowCreateTemplate(false)}
-        />
-      )}
-
-      {/* Edit Template Modal */}
-      {editingTemplate && (
-        <TemplateForm
-          template={editingTemplate}
-          onSubmit={(templateData) => {
-            onUpdateTemplate?.(editingTemplate.id, templateData);
-            setEditingTemplate(null);
-          }}
-          onCancel={() => setEditingTemplate(null)}
-        />
-      )}
     </div>
   );
 }
@@ -130,9 +111,9 @@ function TemplateCard({ template, onSelect, onEdit, onDelete, isCustom }) {
 }
 
 /**
- * Form tạo/chỉnh sửa template
+ * Form tạo/chỉnh sửa template - Component độc lập
  */
-function TemplateForm({ template, onSubmit, onCancel }) {
+export function TemplateForm({ template, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     name: template?.name || '',
     description: template?.description || '',
@@ -156,66 +137,68 @@ function TemplateForm({ template, onSubmit, onCancel }) {
     <div className="modal-overlay">
       <div className="modal-content large">
         <div className="modal-header">
-          <h3>{template ? 'Edit Template' : 'Create New Template'}</h3>
+          <h3>{template ? '✏️ Edit Template' : '➕ Create New Template'}</h3>
           <button className="modal-close" onClick={onCancel}>✕</button>
         </div>
         
-        <form onSubmit={handleSubmit} className="template-form">
-          <div className="form-group">
-            <label>Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              placeholder="Enter template name"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Description</label>
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder="Enter template description"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Template</label>
-            <textarea
-              value={formData.template}
-              onChange={(e) => setFormData({...formData, template: e.target.value})}
-              placeholder="Enter template content. Use {{variable}} for variables."
-              rows="10"
-              required
-            />
-            <div className="template-help">
-              <p>💡 Use <code>{'{{variable}}'}</code> syntax for variables</p>
-              {variables.length > 0 && (
-                <div className="detected-variables">
-                  <span>Detected variables: </span>
-                  {variables.map(variable => (
-                    <span key={variable} className="variable-tag">
-                      {variable}
-                    </span>
-                  ))}
-                </div>
-              )}
+        <div className="modal-body">
+          <form onSubmit={handleSubmit} className="template-form">
+            <div className="form-group">
+              <label>Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Enter template name"
+                required
+              />
             </div>
-          </div>
-          
-          <div className="modal-footer">
-            <button type="button" onClick={onCancel} className="btn btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {template ? 'Update' : 'Create'} Template
-            </button>
-          </div>
-        </form>
+            
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Enter template description"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Template</label>
+              <textarea
+                value={formData.template}
+                onChange={(e) => setFormData({...formData, template: e.target.value})}
+                placeholder="Enter template content. Use {{variable}} for variables."
+                rows="10"
+                required
+              />
+              <div className="template-help">
+                <p>💡 Use <code>{'{{variable}}'}</code> syntax for variables</p>
+                {variables.length > 0 && (
+                  <div className="detected-variables">
+                    <span>Detected variables: </span>
+                    {variables.map(variable => (
+                      <span key={variable} className="variable-tag">
+                        {variable}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        <div className="modal-footer">
+          <button type="button" onClick={onCancel} className="btn btn-secondary">
+            Cancel
+          </button>
+          <button type="submit" onClick={handleSubmit} className="btn btn-primary">
+            {template ? 'Update' : 'Create'} Template
+          </button>
+        </div>
       </div>
     </div>
   );

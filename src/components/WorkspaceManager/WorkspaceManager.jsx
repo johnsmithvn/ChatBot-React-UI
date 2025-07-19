@@ -7,41 +7,20 @@ import { WORKSPACE_CONFIG, DEFAULT_PERSONAS } from '../../utils/constants';
 export function WorkspaceManager({ 
   workspaces, 
   currentWorkspace, 
-  onCreateWorkspace,
+  onCreateWorkspace, // Keep for interface compatibility but handle in App.jsx
   onSelectWorkspace,
-  onUpdateWorkspace,
+  onUpdateWorkspace, // Keep for interface compatibility but handle in App.jsx
   onDeleteWorkspace, // eslint-disable-line no-unused-vars
   onCreateGroup,
   onUpdateGroup,
   onDeleteGroup,
-  onMoveChatsToGroup
+  onMoveChatsToGroup,
+  settings, // Add settings prop
+  onCreateWorkspaceClick, // New prop to handle create workspace button click
+  onEditWorkspaceClick // New prop to handle edit workspace button click
 }) {
-  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
-
-  const handleCreateWorkspace = useCallback((workspaceData) => {
-    const newWorkspace = {
-      id: Date.now().toString(),
-      name: workspaceData.name || WORKSPACE_CONFIG.DEFAULT_WORKSPACE_NAME,
-      description: workspaceData.description || '',
-      persona: workspaceData.persona || DEFAULT_PERSONAS.assistant,
-      groups: [{
-        id: `group_${Date.now()}`,
-        name: WORKSPACE_CONFIG.DEFAULT_GROUP_NAME,
-        description: '',
-        chatIds: [],
-        promptTemplate: null,
-        persona: workspaceData.persona || DEFAULT_PERSONAS.assistant
-      }],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    onCreateWorkspace?.(newWorkspace);
-    setShowCreateWorkspace(false);
-  }, [onCreateWorkspace]);
 
   const handleCreateGroup = useCallback((groupData) => {
     const newGroup = {
@@ -78,7 +57,7 @@ export function WorkspaceManager({
           </select>
           <button
             className="workspace-create-btn"
-            onClick={() => setShowCreateWorkspace(true)}
+            onClick={() => onCreateWorkspaceClick?.()}
             title="Create new workspace"
           >
             ➕
@@ -87,7 +66,16 @@ export function WorkspaceManager({
         
         {currentWorkspace && (
           <div className="workspace-info">
-            <h3 className="workspace-name">{currentWorkspace.name}</h3>
+            <div className="workspace-header-row">
+              <h3 className="workspace-name">{currentWorkspace.name}</h3>
+              <button
+                className="workspace-edit-btn"
+                onClick={() => onEditWorkspaceClick?.(currentWorkspace)}
+                title="Edit workspace"
+              >
+                ✏️
+              </button>
+            </div>
             <p className="workspace-description">{currentWorkspace.description}</p>
             <div className="workspace-persona">
               <span className="persona-label">Persona:</span>
@@ -125,31 +113,11 @@ export function WorkspaceManager({
         </div>
       )}
 
-      {/* Create Workspace Modal */}
-      {showCreateWorkspace && (
-        <WorkspaceForm
-          onSubmit={handleCreateWorkspace}
-          onCancel={() => setShowCreateWorkspace(false)}
-        />
-      )}
-
       {/* Create Group Modal */}
       {showCreateGroup && (
         <GroupForm
           onSubmit={handleCreateGroup}
           onCancel={() => setShowCreateGroup(false)}
-        />
-      )}
-
-      {/* Edit Workspace Modal */}
-      {editingWorkspace && (
-        <WorkspaceForm
-          workspace={editingWorkspace}
-          onSubmit={(data) => {
-            onUpdateWorkspace?.(editingWorkspace.id, data);
-            setEditingWorkspace(null);
-          }}
-          onCancel={() => setEditingWorkspace(null)}
         />
       )}
 
@@ -302,13 +270,73 @@ function GroupItem({ group, onEdit, onDelete, onDrop }) {
 }
 
 /**
+ * Create Workspace Modal - Independent component
+ */
+export function CreateWorkspaceModal({ isOpen, onClose, onCreateWorkspace, settings }) {
+  const handleSubmit = useCallback((workspaceData) => {
+    const newWorkspace = {
+      id: Date.now().toString(),
+      name: workspaceData.name || WORKSPACE_CONFIG.DEFAULT_WORKSPACE_NAME,
+      description: workspaceData.description || '',
+      persona: workspaceData.persona || DEFAULT_PERSONAS.assistant,
+      defaultPrompt: workspaceData.defaultPrompt || settings?.defaultWorkspacePrompt || '',
+      groups: [{
+        id: `group_${Date.now()}`,
+        name: WORKSPACE_CONFIG.DEFAULT_GROUP_NAME,
+        description: '',
+        chatIds: [],
+        promptTemplate: null,
+        persona: workspaceData.persona || DEFAULT_PERSONAS.assistant
+      }],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    onCreateWorkspace?.(newWorkspace);
+    onClose();
+  }, [onCreateWorkspace, onClose, settings]);
+
+  if (!isOpen) return null;
+
+  return (
+    <WorkspaceForm
+      onSubmit={handleSubmit}
+      onCancel={onClose}
+      settings={settings}
+    />
+  );
+}
+
+/**
+ * Edit Workspace Modal - Independent component
+ */
+export function EditWorkspaceModal({ isOpen, workspace, onClose, onUpdateWorkspace, settings }) {
+  const handleSubmit = useCallback((data) => {
+    onUpdateWorkspace?.(workspace.id, data);
+    onClose();
+  }, [workspace, onUpdateWorkspace, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <WorkspaceForm
+      workspace={workspace}
+      onSubmit={handleSubmit}
+      onCancel={onClose}
+      settings={settings}
+    />
+  );
+}
+
+/**
  * Form tạo/chỉnh sửa workspace
  */
-function WorkspaceForm({ workspace, onSubmit, onCancel }) {
+export function WorkspaceForm({ workspace, onSubmit, onCancel, settings }) {
   const [formData, setFormData] = useState({
     name: workspace?.name || '',
     description: workspace?.description || '',
-    persona: workspace?.persona || DEFAULT_PERSONAS.assistant
+    persona: workspace?.persona || DEFAULT_PERSONAS.assistant,
+    defaultPrompt: workspace?.defaultPrompt || settings?.defaultWorkspacePrompt || ''
   });
 
   const handleSubmit = (e) => {
@@ -361,6 +389,19 @@ function WorkspaceForm({ workspace, onSubmit, onCancel }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="form-group">
+            <label>Default Prompt</label>
+            <textarea
+              value={formData.defaultPrompt}
+              onChange={(e) => setFormData({...formData, defaultPrompt: e.target.value})}
+              placeholder="Enter default prompt for this workspace..."
+              rows="4"
+            />
+            <small className="form-hint">
+              💡 Prompt này sẽ được sử dụng mặc định cho tất cả chat trong workspace
+            </small>
           </div>
           
           <div className="modal-footer">

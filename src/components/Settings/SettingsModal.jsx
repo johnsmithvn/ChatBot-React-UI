@@ -228,6 +228,84 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
               </label>
             </div>
           </div>
+
+          {/* System Prompts */}
+          <div className="settings-section">
+            <h3>🤖 System Prompts</h3>
+            
+            <div className="form-group">
+              <label htmlFor="systemPrompt">Global System Prompt</label>
+              <textarea
+                id="systemPrompt"
+                value={tempSettings.systemPrompt || ''}
+                onChange={(e) => setTempSettings({
+                  ...tempSettings,
+                  systemPrompt: e.target.value
+                })}
+                className="form-textarea"
+                rows={8}
+                placeholder="Nhập system prompt chung cho toàn bộ ứng dụng..."
+              />
+              <small className="form-hint">
+                🎯 Prompt cơ bản để định hình cách AI trả lời trong toàn bộ ứng dụng
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="defaultWorkspacePrompt">Default Workspace Prompt</label>
+              <textarea
+                id="defaultWorkspacePrompt"
+                value={tempSettings.defaultWorkspacePrompt || ''}
+                onChange={(e) => setTempSettings({
+                  ...tempSettings,
+                  defaultWorkspacePrompt: e.target.value
+                })}
+                className="form-textarea"
+                rows={6}
+                placeholder="Nhập prompt mặc định cho workspace mới..."
+              />
+              <small className="form-hint">
+                📋 Prompt mặc định sẽ được sử dụng khi tạo workspace mới
+              </small>
+            </div>
+
+            <div className="form-group">
+              <button
+                type="button"
+                className="reset-prompts-btn"
+                onClick={() => {
+                  // Reset to default prompts
+                  setTempSettings({
+                    ...tempSettings,
+                    systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
+
+🎯 **Quy tắc định dạng:**
+- Sử dụng **bold** cho từ khóa quan trọng
+- Sử dụng \`inline code\` cho tên function, variable, command
+- Sử dụng \`\`\`language cho code blocks với ngôn ngữ cụ thể
+- Sử dụng ## cho headers chính, ### cho sub-headers  
+- Sử dụng - hoặc 1. cho lists
+- Sử dụng > cho blockquotes khi cần nhấn mạnh
+- Sử dụng | | cho tables khi trình bày data
+
+Hãy luôn format đẹp để dễ đọc!`,
+                    defaultWorkspacePrompt: `Bạn đang làm việc trong một workspace chuyên nghiệp. Hãy:
+
+📋 **Nguyên tắc làm việc:**
+- Tập trung vào context của workspace hiện tại
+- Đưa ra lời khuyên practical và actionable
+- Giải thích rõ ràng từng bước thực hiện
+- Suggest best practices trong domain này
+- Hỗ trợ troubleshooting khi gặp vấn đề
+
+💡 **Mục tiêu:** Trở thành trợ lý đắc lực giúp hoàn thành công việc hiệu quả!`
+                  });
+                }}
+              >
+                🔄 Reset to Default Prompts
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="modal-footer">

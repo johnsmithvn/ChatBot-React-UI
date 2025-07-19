@@ -3,8 +3,8 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
-import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
-import { PromptTemplateManager, UseTemplateModal } from './components/PromptTemplateManager/PromptTemplateManager';
+import { WorkspaceManager, CreateWorkspaceModal, EditWorkspaceModal } from './components/WorkspaceManager/WorkspaceManager';
+import { PromptTemplateManager, UseTemplateModal, TemplateForm } from './components/PromptTemplateManager/PromptTemplateManager';
 import { WorkspacePromptModal } from './components/WorkspacePrompt/WorkspacePromptModal';
 import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
 import { useChats } from './hooks/useChats';
@@ -19,9 +19,15 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
+  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
+  const [showEditWorkspace, setShowEditWorkspace] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showUseTemplate, setShowUseTemplate] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+  const [showEditTemplate, setShowEditTemplate] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
   
@@ -94,14 +100,9 @@ function App() {
     const messageToSend = message.trim();
     setMessage('');
     
-    console.log('📤 handleSendMessage - currentWorkspace:', currentWorkspace);
-    console.log('📤 handleSendMessage - currentWorkspace.systemPrompt:', currentWorkspace?.systemPrompt);
+    console.log('📤 handleSendMessage - sending message:', messageToSend);
     
-    // Sử dụng system prompt từ workspace
-    const systemPrompt = currentWorkspace?.systemPrompt || null;
-    console.log('📤 handleSendMessage - final systemPrompt:', systemPrompt);
-    
-    await sendMessage(messageToSend, systemPrompt);
+    await sendMessage(messageToSend);
   };
 
   // Wrapper function để tạo chat mới
@@ -450,6 +451,12 @@ function App() {
                 onSelectWorkspace={selectWorkspace}
                 onUpdateWorkspace={updateWorkspace}
                 onDeleteWorkspace={deleteWorkspace}
+                settings={settings}
+                onCreateWorkspaceClick={() => setShowCreateWorkspace(true)}
+                onEditWorkspaceClick={(workspace) => {
+                  setEditingWorkspace(workspace);
+                  setShowEditWorkspace(true);
+                }}
               />
             </div>
           </div>
@@ -471,8 +478,13 @@ function App() {
                   setSelectedTemplate(template);
                   setShowUseTemplate(true);
                 }}
-                onCreateTemplate={createPromptTemplate}
-                onUpdateTemplate={updatePromptTemplate}
+                onCreateClick={() => {
+                  setShowCreateTemplate(true);
+                }}
+                onEditClick={(template) => {
+                  setEditingTemplate(template);
+                  setShowEditTemplate(true);
+                }}
                 onDeleteTemplate={deletePromptTemplate}
                 onClose={() => setShowTemplateManager(false)}
               />
@@ -498,18 +510,70 @@ function App() {
         />
       )}
 
+      {/* Create Template Modal */}
+      {showCreateTemplate && (
+        <TemplateForm
+          onSubmit={(templateData) => {
+            createPromptTemplate(templateData);
+            setShowCreateTemplate(false);
+          }}
+          onCancel={() => {
+            setShowCreateTemplate(false);
+            setShowTemplateManager(true);
+          }}
+        />
+      )}
+
+      {/* Edit Template Modal */}
+      {showEditTemplate && editingTemplate && (
+        <TemplateForm
+          template={editingTemplate}
+          onSubmit={(templateData) => {
+            updatePromptTemplate(editingTemplate.id, templateData);
+            setShowEditTemplate(false);
+            setEditingTemplate(null);
+          }}
+          onCancel={() => {
+            setShowEditTemplate(false);
+            setEditingTemplate(null);
+            setShowTemplateManager(true);
+          }}
+        />
+      )}
+
       {/* Workspace Prompt Modal */}
       <WorkspacePromptModal
         isOpen={showPromptModal}
         onClose={() => setShowPromptModal(false)}
         workspace={currentWorkspace}
         onSave={updateWorkspacePrompt}
+        settings={settings}
       />
 
       {/* Workspace Info Modal */}
       <WorkspaceInfoModal
         isOpen={showWorkspaceInfo}
         onClose={() => setShowWorkspaceInfo(false)}
+      />
+
+      {/* Create Workspace Modal - Independent */}
+      <CreateWorkspaceModal
+        isOpen={showCreateWorkspace}
+        onClose={() => setShowCreateWorkspace(false)}
+        onCreateWorkspace={createWorkspace}
+        settings={settings}
+      />
+
+      {/* Edit Workspace Modal - Independent */}
+      <EditWorkspaceModal
+        isOpen={showEditWorkspace}
+        workspace={editingWorkspace}
+        onClose={() => {
+          setShowEditWorkspace(false);
+          setEditingWorkspace(null);
+        }}
+        onUpdateWorkspace={updateWorkspace}
+        settings={settings}
       />
     </div>
   );
