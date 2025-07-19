@@ -129,10 +129,10 @@ export const Sidebar = memo(function Sidebar({
           <>
             <button 
               onClick={onWorkspaceClick}
-              className="footer-button workspace-button"
-              title="Workspace Manager"
+              className="footer-button workspace-button add-workspace"
+              title="Add New Workspace"
             >
-              🏢 Workspaces
+              ➕ New Workspace
             </button>
             
             <button 

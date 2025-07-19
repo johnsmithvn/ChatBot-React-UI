@@ -3,7 +3,6 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
-import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
 import { WorkspaceSettingsModal } from './components/WorkspaceManager/WorkspaceSettingsModal';
 import { PromptTemplateManager, UseTemplateModal, TemplateForm } from './components/PromptTemplateManager/PromptTemplateManager';
 import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
@@ -18,7 +17,6 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
   const [showWorkspaceSettings, setShowWorkspaceSettings] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
@@ -137,7 +135,10 @@ function App() {
           console.log("Settings button clicked, current state:", showSettings);
           setShowSettings(true);
         }}
-        onWorkspaceClick={() => setShowWorkspaceManager(true)}
+        onWorkspaceClick={() => {
+          setEditingWorkspace(null); // Null = create mode
+          setShowWorkspaceSettings(true);
+        }}
         onTemplateClick={() => setShowTemplateManager(true)}
         // Workspace props
         workspaces={workspaces}
@@ -433,37 +434,6 @@ function App() {
           settings={settings}
           onUpdateSetting={updateSetting}
         />
-      )}
-
-      {/* Workspace Manager Modal */}
-      {showWorkspaceManager && (
-        <div className="modal-overlay">
-          <div className="modal-content large">
-            <div className="modal-header">
-              <h3>🏢 Workspace Manager</h3>
-              <button className="modal-close" onClick={() => setShowWorkspaceManager(false)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <WorkspaceManager
-                workspaces={workspaces}
-                currentWorkspace={currentWorkspace}
-                onCreateWorkspace={createWorkspace}
-                onSelectWorkspace={selectWorkspace}
-                onUpdateWorkspace={updateWorkspace}
-                onDeleteWorkspace={deleteWorkspace}
-                settings={settings}
-                onCreateWorkspaceClick={() => {
-                  setEditingWorkspace(null); // null means create mode
-                  setShowWorkspaceSettings(true);
-                }}
-                onEditWorkspaceClick={(workspace) => {
-                  setEditingWorkspace(workspace);
-                  setShowWorkspaceSettings(true);
-                }}
-              />
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Template Manager Modal */}

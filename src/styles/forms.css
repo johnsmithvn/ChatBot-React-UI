@@ -385,3 +385,23 @@ input:checked + .slider:before {
 .group-form .form-actions {
   margin-top: auto;
 }
+
+/* API Configuration Styles */
+.api-info-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 8px;
+}
+
+.api-info-text {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.api-info-box .form-hint {
+  margin: 0;
+}

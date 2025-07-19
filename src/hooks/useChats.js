@@ -59,7 +59,9 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       messages: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      model: settings.model || 'gpt-3.5-turbo'
+      model: currentWorkspace?.apiSettings?.useCustomApiKey ? 
+        (currentWorkspace?.apiSettings?.model || 'gpt-4o-mini') : 
+        (settings.model || 'gpt-4o-mini')
     };
     
     console.log('🆕 Creating new chat:', newChat);
@@ -70,7 +72,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     
     console.log('✅ New chat created and set as current:', { chatId: newChat.id, newChats });
     return newChat;
-  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId, settings.model]);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId, settings.model, currentWorkspace?.apiSettings?.useCustomApiKey, currentWorkspace?.apiSettings?.model]);
 
   // Xóa chat
   const deleteChat = useCallback((chatId) => {
@@ -158,12 +160,31 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         workspaceSettings: currentWorkspace?.settings
       });
 
-      // Tạo instance OpenAIService với API key từ settings
-      const apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
-      console.log('🔑 API key check:', { hasApiKey: !!apiKey, apiKeyLength: apiKey?.length });
+      // Tạo instance OpenAIService với API key từ workspace hoặc settings
+      let apiKey, model;
+      
+      // Check if workspace uses custom API configuration
+      if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.apiKey) {
+        apiKey = currentWorkspace.apiSettings.apiKey;
+        model = currentWorkspace.apiSettings.model || 'gpt-4o-mini';
+        console.log('🔑 Using workspace API configuration:', { 
+          hasApiKey: !!apiKey, 
+          apiKeyLength: apiKey?.length,
+          model: model 
+        });
+      } else {
+        // Fall back to global settings
+        apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+        model = settings.model || 'gpt-4o-mini';
+        console.log('🔑 Using global API configuration:', { 
+          hasApiKey: !!apiKey, 
+          apiKeyLength: apiKey?.length,
+          model: model 
+        });
+      }
       
       if (!apiKey) {
-        throw new Error('No API key found');
+        throw new Error('No API key found. Please configure API key in workspace settings or global settings.');
       }
       
       const openAIService = new OpenAIService(apiKey);
@@ -216,7 +237,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       
       const response = await openAIService.sendMessage(
         apiMessages,
-        settings.model || 'gpt-3.5-turbo', // Always use global model
+        model, // Use workspace or global model
         {
           temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
           max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
@@ -280,8 +301,23 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       const limitedMessages = limitMessagesByTokensWithPrompt(messagesUpToIndex, 4000);
       const apiMessages = prepareMessagesForAPI(limitedMessages);
 
-      // Tạo instance OpenAIService với API key từ settings
-      const apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+      // Tạo instance OpenAIService với API key từ workspace hoặc settings
+      let apiKey, model;
+      
+      // Check if workspace uses custom API configuration
+      if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.apiKey) {
+        apiKey = currentWorkspace.apiSettings.apiKey;
+        model = currentWorkspace.apiSettings.model || 'gpt-4o-mini';
+      } else {
+        // Fall back to global settings
+        apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+        model = settings.model || 'gpt-4o-mini';
+      }
+      
+      if (!apiKey) {
+        throw new Error('No API key found. Please configure API key in workspace settings or global settings.');
+      }
+      
       const openAIService = new OpenAIService(apiKey);
 
       // Build system prompt by combining all levels
@@ -304,7 +340,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
 
       const response = await openAIService.sendMessage(
         apiMessages,
-        settings.model || 'gpt-3.5-turbo', // Always use global model
+        model, // Use workspace or global model
         {
           temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
           max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,

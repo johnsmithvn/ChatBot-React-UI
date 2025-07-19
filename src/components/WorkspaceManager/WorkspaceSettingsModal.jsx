@@ -16,6 +16,11 @@ export function WorkspaceSettingsModal({
     persona: null,
     customCharacterDefinition: '', // For editing persona's characterDefinition
     useGlobalSystemPrompt: true, // New field - default true
+    apiSettings: {
+      useCustomApiKey: false,
+      apiKey: '',
+      model: 'gpt-4o-mini'
+    },
     settings: {
       temperature: 0.7,
       maxTokens: 1000,
@@ -35,6 +40,11 @@ export function WorkspaceSettingsModal({
           persona: workspace.persona || null,
           customCharacterDefinition: workspace.persona?.characterDefinition || '',
           useGlobalSystemPrompt: workspace.useGlobalSystemPrompt ?? true, // Default to true if not set
+          apiSettings: {
+            useCustomApiKey: workspace.apiSettings?.useCustomApiKey || false,
+            apiKey: workspace.apiSettings?.apiKey || '',
+            model: workspace.apiSettings?.model || 'gpt-4o-mini'
+          },
           settings: {
             temperature: workspace.settings?.temperature || 0.7,
             maxTokens: workspace.settings?.maxTokens || 1000,
@@ -50,6 +60,11 @@ export function WorkspaceSettingsModal({
           persona: null, // Start with Default (no persona)
           customCharacterDefinition: settings?.defaultWorkspacePrompt || '', // Use default workspace prompt
           useGlobalSystemPrompt: true, // Default to true for new workspaces
+          apiSettings: {
+            useCustomApiKey: false,
+            apiKey: '',
+            model: 'gpt-4o-mini'
+          },
           settings: {
             temperature: 0.7,
             maxTokens: 1000,
@@ -70,7 +85,8 @@ export function WorkspaceSettingsModal({
           ...formData.persona,
           characterDefinition: formData.customCharacterDefinition
         } : null,
-        useGlobalSystemPrompt: formData.useGlobalSystemPrompt
+        useGlobalSystemPrompt: formData.useGlobalSystemPrompt,
+        apiSettings: formData.apiSettings
       };
       onUpdateWorkspace(workspace.id, updatedData);
     } else {
@@ -84,6 +100,7 @@ export function WorkspaceSettingsModal({
           characterDefinition: formData.customCharacterDefinition
         } : null,
         useGlobalSystemPrompt: formData.useGlobalSystemPrompt,
+        apiSettings: formData.apiSettings,
         settings: formData.settings,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -288,6 +305,92 @@ export function WorkspaceSettingsModal({
                 🧠 Số tokens tối đa cho context (bao gồm lịch sử chat)
               </small>
             </div>
+          </div>
+
+          {/* API Configuration Section */}
+          <div className="settings-section">
+            <h4>🔑 API Configuration</h4>
+            
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.apiSettings.useCustomApiKey}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    apiSettings: {
+                      ...prev.apiSettings,
+                      useCustomApiKey: e.target.checked
+                    }
+                  }))}
+                />
+                <span>🔐 Use Custom API Key for this workspace</span>
+              </label>
+              <small className="form-hint">
+                💡 Enable to use a different API key and model for this workspace
+              </small>
+            </div>
+
+            {formData.apiSettings.useCustomApiKey && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="workspaceApiKey">OpenAI API Key</label>
+                  <input
+                    id="workspaceApiKey"
+                    type="password"
+                    value={formData.apiSettings.apiKey}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      apiSettings: {
+                        ...prev.apiSettings,
+                        apiKey: e.target.value
+                      }
+                    }))}
+                    className="form-input"
+                    placeholder="sk-..."
+                  />
+                  <small className="form-hint">
+                    🔒 API key specific to this workspace (kept secure in local storage)
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="workspaceModel">AI Model</label>
+                  <select
+                    id="workspaceModel"
+                    value={formData.apiSettings.model}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      apiSettings: {
+                        ...prev.apiSettings,
+                        model: e.target.value
+                      }
+                    }))}
+                    className="form-select"
+                  >
+                    <option value="gpt-4o-mini">GPT-4o Mini (Recommended)</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  </select>
+                  <small className="form-hint">
+                    🤖 AI model to use for this workspace
+                  </small>
+                </div>
+              </>
+            )}
+
+            {!formData.apiSettings.useCustomApiKey && (
+              <div className="api-info-box">
+                <p className="api-info-text">
+                  🌐 This workspace will use the global API configuration from Settings
+                </p>
+                <small className="form-hint">
+                  ⚙️ To change global API settings, go to <strong>Settings &gt; API Configuration</strong>
+                </small>
+              </div>
+            )}
           </div>
 
           {/* Global System Prompt Section */}

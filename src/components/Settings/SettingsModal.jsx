@@ -58,65 +58,23 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
         </div>
 
         <div className="modal-body settings-content">
-          {/* API Settings */}
+          {/* API Configuration Notice */}
           <div className="settings-section">
             <h3>🔑 API Configuration</h3>
             
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={tempSettings.useCustomApiKey}
-                  onChange={(e) => setTempSettings({
-                    ...tempSettings,
-                    useCustomApiKey: e.target.checked
-                  })}
-                />
-                <span>🔧 Use custom API key</span>
-              </label>
-              <small className="form-hint">
-                {tempSettings.useCustomApiKey 
-                  ? "💡 Sử dụng API key tùy chỉnh" 
-                  : "💡 Sử dụng API key từ environment variables"}
-              </small>
-            </div>
-
-            {tempSettings.useCustomApiKey && (
-              <div className="form-group">
-                <label htmlFor="apiKey">OpenAI API Key</label>
-                <input
-                  id="apiKey"
-                  type="password"
-                  value={tempSettings.apiKey}
-                  onChange={(e) => setTempSettings({
-                    ...tempSettings,
-                    apiKey: e.target.value
-                  })}
-                  placeholder="sk-..."
-                  className="form-input"
-                />
-                <small className="form-hint">
-                  🔒 API key sẽ được lưu an toàn trên thiết bị của bạn
-                </small>
+            <div className="api-config-notice">
+              <div className="notice-content">
+                <p className="notice-title">🏢 API settings are now workspace-specific</p>
+                <p className="notice-description">
+                  API configuration has been moved to individual workspace settings. 
+                  Each workspace can now have its own API key and model configuration.
+                </p>
+                <div className="notice-actions">
+                  <p className="notice-instruction">
+                    📝 To configure API settings: Go to any workspace → ⚙️ Settings → 🔑 API Configuration
+                  </p>
+                </div>
               </div>
-            )}
-
-            <div className="form-group">
-              <label htmlFor="model">Model</label>
-              <select
-                id="model"
-                value={tempSettings.model}
-                onChange={(e) => setTempSettings({
-                  ...tempSettings,
-                  model: e.target.value
-                })}
-                className="form-select"
-              >
-                <option value={MODELS.GPT_4O_MINI}>GPT-4o Mini (Recommended)</option>
-                <option value={MODELS.GPT_4O}>GPT-4o</option>
-                <option value={MODELS.GPT_4_TURBO}>GPT-4 Turbo</option>
-                <option value={MODELS.GPT_3_5_TURBO}>GPT-3.5 Turbo</option>
-              </select>
             </div>
           </div>
 
