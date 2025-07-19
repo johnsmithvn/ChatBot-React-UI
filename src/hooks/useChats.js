@@ -241,6 +241,11 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         {
           temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
           max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
+          top_p: currentWorkspace?.settings?.topP || 1.0,
+          presence_penalty: currentWorkspace?.settings?.presencePenalty || 0.0,
+          frequency_penalty: currentWorkspace?.settings?.frequencyPenalty || 0.0,
+          stop: currentWorkspace?.settings?.stop?.length > 0 ? currentWorkspace?.settings?.stop : undefined,
+          logit_bias: Object.keys(currentWorkspace?.settings?.logitBias || {}).length > 0 ? currentWorkspace?.settings?.logitBias : undefined,
           systemPrompt: buildSystemPrompt()
         }
       );
@@ -344,6 +349,11 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
         {
           temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
           max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
+          top_p: currentWorkspace?.settings?.topP || 1.0,
+          presence_penalty: currentWorkspace?.settings?.presencePenalty || 0.0,
+          frequency_penalty: currentWorkspace?.settings?.frequencyPenalty || 0.0,
+          stop: currentWorkspace?.settings?.stop?.length > 0 ? currentWorkspace?.settings?.stop : undefined,
+          logit_bias: Object.keys(currentWorkspace?.settings?.logitBias || {}).length > 0 ? currentWorkspace?.settings?.logitBias : undefined,
           systemPrompt: buildSystemPrompt()
         }
       );

@@ -405,3 +405,177 @@ input:checked + .slider:before {
 .api-info-box .form-hint {
   margin: 0;
 }
+
+/* Help Icon Button */
+.help-icon-btn {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.help-icon-btn:hover {
+  background: linear-gradient(135deg, var(--primary-color-dark) 0%, var(--primary-color) 100%);
+  transform: scale(1.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Persona Header */
+.persona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.persona-header label {
+  margin: 0;
+}
+
+/* Add Persona Button */
+.btn-add-persona {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-add-persona:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+  background: linear-gradient(135deg, #0f8b81 0%, #32d973 100%);
+}
+
+/* Add Persona Modal */
+.add-persona-modal {
+  max-width: 800px;
+  width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Remove duplicate persona-settings-grid since we're using the standard form layout now */
+
+/* Help Modal */
+.help-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.help-modal-content {
+  background: var(--background-default);
+  border-radius: 12px;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.help-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1001; /* Higher than main modal */
+}
+
+.help-modal .modal-overlay {
+  z-index: 1001;
+}
+
+.help-content {
+  padding: 20px 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.help-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.help-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.help-section p {
+  margin: 8px 0;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.help-section ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.help-section li {
+  margin: 4px 0;
+  color: var(--text-secondary);
+}
+
+.help-section strong {
+  color: var(--text-primary);
+}
+
+.help-section code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  color: var(--primary-color);
+}
+
+.help-section pre {
+  background: var(--bg-tertiary);
+  padding: 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.help-section pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.help-actions {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 0 0;
+  border-top: 1px solid var(--border-color);
+}

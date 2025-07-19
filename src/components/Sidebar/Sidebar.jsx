@@ -22,8 +22,7 @@ export const Sidebar = memo(function Sidebar({
   workspaces = [],
   currentWorkspace,
   onSelectWorkspace,
-  onOpenPromptModal,
-  onOpenWorkspaceInfo
+  onOpenPromptModal
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
@@ -117,7 +116,6 @@ export const Sidebar = memo(function Sidebar({
               onDeleteChat={onDeleteChat}
               onRenameChat={onRenameChat}
               onOpenPromptModal={onOpenPromptModal}
-              onOpenWorkspaceInfo={onOpenWorkspaceInfo}
             />
           </div>
         </>

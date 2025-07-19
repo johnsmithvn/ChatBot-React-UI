@@ -5,7 +5,6 @@ import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
 import { WorkspaceSettingsModal } from './components/WorkspaceManager/WorkspaceSettingsModal';
 import { PromptTemplateManager, UseTemplateModal, TemplateForm } from './components/PromptTemplateManager/PromptTemplateManager';
-import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
 import { useChats } from './hooks/useChats';
 import { useSettings } from './hooks/useSettings';
 import { useWorkspace } from './hooks/useWorkspace';
@@ -25,10 +24,9 @@ function App() {
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [showEditTemplate, setShowEditTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
-  const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
   
   // Custom hooks
-  const { settings, updateSetting } = useSettings();
+  const { settings, updateSetting, addPersona } = useSettings();
   
   // Workspace management
   const {
@@ -148,7 +146,6 @@ function App() {
           setEditingWorkspace(currentWorkspace);
           setShowWorkspaceSettings(true);
         }}
-        onOpenWorkspaceInfo={() => setShowWorkspaceInfo(true)}
       />
 
       {/* Main Chat Area */}
@@ -514,12 +511,6 @@ function App() {
         />
       )}
 
-      {/* Workspace Info Modal */}
-      <WorkspaceInfoModal
-        isOpen={showWorkspaceInfo}
-        onClose={() => setShowWorkspaceInfo(false)}
-      />
-
       {/* Workspace Settings Modal - Unified for Create & Edit */}
       <WorkspaceSettingsModal
         isOpen={showWorkspaceSettings}
@@ -530,7 +521,10 @@ function App() {
         }}
         onUpdateWorkspace={updateWorkspace}
         onCreateWorkspace={createWorkspace}
-        settings={settings}
+        settings={{
+          ...settings,
+          onAddPersona: addPersona
+        }}
       />
     </div>
   );

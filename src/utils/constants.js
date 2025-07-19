@@ -229,7 +229,12 @@ export const DEFAULT_PERSONAS = {
     description: 'Trợ lý AI thông minh và hữu ích',
     characterDefinition: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và sử dụng markdown để format đẹp câu trả lời.`,
     temperature: 0.7,
-    maxTokens: 1000
+    maxTokens: 1000,
+    topP: 1.0,
+    presencePenalty: 0.0,
+    frequencyPenalty: 0.0,
+    stop: [],
+    logitBias: {}
   },
   coding: {
     id: 'coding',
@@ -237,7 +242,12 @@ export const DEFAULT_PERSONAS = {
     description: 'Chuyên gia lập trình',
     characterDefinition: `Bạn là một senior developer với kinh nghiệm sâu rộng. Hãy giúp viết code sạch, debug lỗi và đưa ra best practices.`,
     temperature: 0.3,
-    maxTokens: 2000
+    maxTokens: 2000,
+    topP: 0.8,
+    presencePenalty: 0.1,
+    frequencyPenalty: 0.2,
+    stop: [],
+    logitBias: {}
   },
   creative: {
     id: 'creative',
@@ -245,7 +255,12 @@ export const DEFAULT_PERSONAS = {
     description: 'Nhà văn sáng tạo',
     characterDefinition: `Bạn là một creative writer tài năng. Hãy viết content sáng tạo, hấp dẫn với ngôn ngữ sinh động và phong phú.`,
     temperature: 0.9,
-    maxTokens: 1500
+    maxTokens: 1500,
+    topP: 0.9,
+    presencePenalty: 0.6,
+    frequencyPenalty: 0.3,
+    stop: [],
+    logitBias: {}
   },
   analytical: {
     id: 'analytical',
@@ -253,6 +268,11 @@ export const DEFAULT_PERSONAS = {
     description: 'Chuyên gia phân tích dữ liệu',
     characterDefinition: `Bạn là một data analyst chuyên nghiệp. Hãy phân tích dữ liệu một cách logic, đưa ra insights và recommendations.`,
     temperature: 0.2,
-    maxTokens: 1200
+    maxTokens: 1200,
+    topP: 0.7,
+    presencePenalty: 0.1,
+    frequencyPenalty: 0.1,
+    stop: [],
+    logitBias: {}
   }
 };

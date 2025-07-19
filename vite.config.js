@@ -35,8 +35,7 @@ export default defineConfig({
             './src/components/Settings/SettingsModal.jsx',
             './src/components/WorkspaceManager/WorkspaceManager.jsx',
             './src/components/PromptTemplateManager/PromptTemplateManager.jsx',
-            './src/components/WorkspacePrompt/WorkspacePromptModal.jsx',
-            './src/components/WorkspaceInfo/WorkspaceInfoModal.jsx'
+            './src/components/WorkspacePrompt/WorkspacePromptModal.jsx'
           ]
         }
       }
