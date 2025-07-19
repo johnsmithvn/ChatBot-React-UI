@@ -8,9 +8,8 @@ import { WORKSPACE_CONFIG, DEFAULT_PERSONAS } from '../utils/constants';
  * - id: unique identifier
  * - name: workspace name
  * - description: workspace description
- * - systemPrompt: common prompt for all chats in workspace
  * - persona: AI personality for workspace
- * - settings: workspace-specific settings
+ * - settings: workspace-specific settings (temperature, maxTokens, etc.)
  */
 export function useWorkspace() {
   const [workspaces, setWorkspaces] = useLocalStorage('workspaces', []);
@@ -20,18 +19,24 @@ export function useWorkspace() {
   // Lấy workspace hiện tại
   const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId);
 
-  // Migrate old workspaces from systemPrompt to defaultPrompt
-  const migrateWorkspaces = useCallback(() => {
-    const needsMigration = workspaces.some(ws => ws.systemPrompt && !ws.defaultPrompt);
+  // Migration: Update old personas that don't have characterDefinition
+  const migratePersonas = useCallback(() => {
+    const needsMigration = workspaces.some(ws => 
+      ws.persona && !ws.persona.characterDefinition && ws.persona.systemPrompt
+    );
+    
     if (needsMigration) {
-      console.log('🔄 Migrating workspaces from systemPrompt to defaultPrompt');
+      console.log('🔄 Migrating personas from systemPrompt to characterDefinition');
       const migratedWorkspaces = workspaces.map(ws => {
-        if (ws.systemPrompt && !ws.defaultPrompt) {
+        if (ws.persona && !ws.persona.characterDefinition && ws.persona.systemPrompt) {
           return {
             ...ws,
-            defaultPrompt: ws.systemPrompt,
-            // Keep systemPrompt for backward compatibility but mark it as migrated
-            systemPrompt: undefined
+            persona: {
+              ...ws.persona,
+              characterDefinition: ws.persona.systemPrompt,
+              // Remove old systemPrompt field
+              systemPrompt: undefined
+            }
           };
         }
         return ws;
@@ -48,10 +53,8 @@ export function useWorkspace() {
         id: `workspace_${Date.now()}`,
         name: 'Default Workspace',
         description: 'Default workspace for testing',
-        defaultPrompt: '',
         persona: DEFAULT_PERSONAS.assistant,
         settings: {
-          model: 'gpt-3.5-turbo',
           temperature: 0.7,
           maxTokens: 1000,
           contextTokens: 4000
@@ -66,10 +69,10 @@ export function useWorkspace() {
       console.log('✅ Default workspace created:', defaultWorkspace);
     } else {
       console.log('✅ Workspaces already exist:', workspaces);
-      // Run migration for existing workspaces
-      migrateWorkspaces();
+      // Run persona migration for existing workspaces
+      migratePersonas();
     }
-  }, [workspaces, setWorkspaces, setCurrentWorkspaceId, migrateWorkspaces]);
+  }, [workspaces, setWorkspaces, setCurrentWorkspaceId, migratePersonas]);
 
   // Tạo workspace mới (simplified structure)
   const createWorkspace = useCallback((workspaceData) => {
@@ -77,13 +80,11 @@ export function useWorkspace() {
       id: `workspace_${Date.now()}`,
       name: workspaceData.name,
       description: workspaceData.description,
-      defaultPrompt: workspaceData.defaultPrompt || '',
       persona: workspaceData.persona || DEFAULT_PERSONAS.assistant,
       settings: {
-        model: 'gpt-3.5-turbo',
-        temperature: 0.7,
-        maxTokens: 1000,
-        contextTokens: 4000
+        temperature: workspaceData.settings?.temperature || 0.7,
+        maxTokens: workspaceData.settings?.maxTokens || 1000,
+        contextTokens: workspaceData.settings?.contextTokens || 4000
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -119,16 +120,6 @@ export function useWorkspace() {
   const selectWorkspace = useCallback((workspaceId) => {
     setCurrentWorkspaceId(workspaceId);
   }, [setCurrentWorkspaceId]);
-
-  // Cập nhật default prompt của workspace
-  const updateWorkspacePrompt = useCallback((workspaceId, defaultPrompt) => {
-    updateWorkspace(workspaceId, { defaultPrompt });
-  }, [updateWorkspace]);
-
-  // Cập nhật persona của workspace
-  const updateWorkspacePersona = useCallback((workspaceId, persona) => {
-    updateWorkspace(workspaceId, { persona });
-  }, [updateWorkspace]);
 
   // Cập nhật settings của workspace
   const updateWorkspaceSettings = useCallback((workspaceId, settings) => {
@@ -171,8 +162,6 @@ export function useWorkspace() {
     updateWorkspace,
     deleteWorkspace,
     selectWorkspace,
-    updateWorkspacePrompt,
-    updateWorkspacePersona,
     updateWorkspaceSettings,
     initializeDefaultWorkspace,
     

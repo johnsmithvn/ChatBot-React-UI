@@ -55,10 +55,10 @@ export function WorkspaceSection({
         <button
           className="workspace-action-button prompt-button"
           onClick={() => onOpenPromptModal?.()}
-          title="Configure workspace system prompt"
+          title="Configure workspace settings"
         >
           <span className="action-icon">⚙️</span>
-          <span className="action-text">Prompt</span>
+          <span className="action-text">Settings</span>
         </button>
         
         <button

@@ -3,9 +3,9 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
-import { WorkspaceManager, CreateWorkspaceModal, EditWorkspaceModal } from './components/WorkspaceManager/WorkspaceManager';
+import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
+import { WorkspaceSettingsModal } from './components/WorkspaceManager/WorkspaceSettingsModal';
 import { PromptTemplateManager, UseTemplateModal, TemplateForm } from './components/PromptTemplateManager/PromptTemplateManager';
-import { WorkspacePromptModal } from './components/WorkspacePrompt/WorkspacePromptModal';
 import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
 import { useChats } from './hooks/useChats';
 import { useSettings } from './hooks/useSettings';
@@ -19,8 +19,7 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
-  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
-  const [showEditWorkspace, setShowEditWorkspace] = useState(false);
+  const [showWorkspaceSettings, setShowWorkspaceSettings] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showUseTemplate, setShowUseTemplate] = useState(false);
@@ -28,7 +27,6 @@ function App() {
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [showEditTemplate, setShowEditTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
-  const [showPromptModal, setShowPromptModal] = useState(false);
   const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
   
   // Custom hooks
@@ -42,7 +40,6 @@ function App() {
     updateWorkspace,
     deleteWorkspace,
     selectWorkspace,
-    updateWorkspacePrompt,
     initializeDefaultWorkspace,
     promptTemplates,
     createPromptTemplate,
@@ -146,7 +143,10 @@ function App() {
         workspaces={workspaces}
         currentWorkspace={currentWorkspace}
         onSelectWorkspace={selectWorkspace}
-        onOpenPromptModal={() => setShowPromptModal(true)}
+        onOpenPromptModal={() => {
+          setEditingWorkspace(currentWorkspace);
+          setShowWorkspaceSettings(true);
+        }}
         onOpenWorkspaceInfo={() => setShowWorkspaceInfo(true)}
       />
 
@@ -165,10 +165,10 @@ function App() {
                   🤖 {settings.model}
                 </span>
                 
-                {/* Workspace System Prompt Info */}
-                {currentWorkspace?.systemPrompt && (
+                {/* Workspace Persona Info */}
+                {currentWorkspace?.persona && (
                   <div className="workspace-prompt-info">
-                    <span className="prompt-active">🎯 Workspace Prompt Active</span>
+                    <span className="prompt-active">� {currentWorkspace.persona.name}</span>
                   </div>
                 )}
               </div>
@@ -452,10 +452,13 @@ function App() {
                 onUpdateWorkspace={updateWorkspace}
                 onDeleteWorkspace={deleteWorkspace}
                 settings={settings}
-                onCreateWorkspaceClick={() => setShowCreateWorkspace(true)}
+                onCreateWorkspaceClick={() => {
+                  setEditingWorkspace(null); // null means create mode
+                  setShowWorkspaceSettings(true);
+                }}
                 onEditWorkspaceClick={(workspace) => {
                   setEditingWorkspace(workspace);
-                  setShowEditWorkspace(true);
+                  setShowWorkspaceSettings(true);
                 }}
               />
             </div>
@@ -541,38 +544,22 @@ function App() {
         />
       )}
 
-      {/* Workspace Prompt Modal */}
-      <WorkspacePromptModal
-        isOpen={showPromptModal}
-        onClose={() => setShowPromptModal(false)}
-        workspace={currentWorkspace}
-        onSave={updateWorkspacePrompt}
-        settings={settings}
-      />
-
       {/* Workspace Info Modal */}
       <WorkspaceInfoModal
         isOpen={showWorkspaceInfo}
         onClose={() => setShowWorkspaceInfo(false)}
       />
 
-      {/* Create Workspace Modal - Independent */}
-      <CreateWorkspaceModal
-        isOpen={showCreateWorkspace}
-        onClose={() => setShowCreateWorkspace(false)}
-        onCreateWorkspace={createWorkspace}
-        settings={settings}
-      />
-
-      {/* Edit Workspace Modal - Independent */}
-      <EditWorkspaceModal
-        isOpen={showEditWorkspace}
-        workspace={editingWorkspace}
+      {/* Workspace Settings Modal - Unified for Create & Edit */}
+      <WorkspaceSettingsModal
+        isOpen={showWorkspaceSettings}
+        workspace={editingWorkspace} // null = create mode, object = edit mode
         onClose={() => {
-          setShowEditWorkspace(false);
+          setShowWorkspaceSettings(false);
           setEditingWorkspace(null);
         }}
         onUpdateWorkspace={updateWorkspace}
+        onCreateWorkspace={createWorkspace}
         settings={settings}
       />
     </div>

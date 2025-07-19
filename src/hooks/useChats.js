@@ -155,7 +155,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       console.log('🔑 API call preparation:', {
         limitedMessages: limitedMessages.length,
         apiMessages: apiMessages.length,
-        systemPrompt: systemPrompt || currentWorkspace?.systemPrompt || settings.systemPrompt
+        workspaceSettings: currentWorkspace?.settings
       });
 
       // Tạo instance OpenAIService với API key từ settings
@@ -174,35 +174,41 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       const buildSystemPrompt = () => {
         let finalSystemPrompt = '';
         
-        // 1. Global system prompt từ settings
-        if (settings.systemPrompt) {
-          finalSystemPrompt += settings.systemPrompt;
+        // DEBUG: Log current workspace structure
+        console.log('🔍 DEBUG buildSystemPrompt:', {
+          currentWorkspace,
+          hasPersona: !!currentWorkspace?.persona,
+          hasCharacterDefinition: !!currentWorkspace?.persona?.characterDefinition,
+          characterDefinition: currentWorkspace?.persona?.characterDefinition,
+          globalSystemPrompt: settings?.globalSystemPrompt,
+          useGlobalSystemPrompt: currentWorkspace?.useGlobalSystemPrompt
+        });
+        
+        // 1. Global System Prompt từ user settings (only if workspace enables it)
+        if (settings?.globalSystemPrompt && currentWorkspace?.useGlobalSystemPrompt !== false) {
+          finalSystemPrompt += settings.globalSystemPrompt;
         }
         
-        // 2. Persona system prompt
-        if (currentWorkspace?.persona?.systemPrompt) {
+        // 2. Persona character definition (if workspace has persona)
+        if (currentWorkspace?.persona?.characterDefinition) {
           if (finalSystemPrompt) finalSystemPrompt += '\n\n';
-          finalSystemPrompt += currentWorkspace.persona.systemPrompt;
+          finalSystemPrompt += currentWorkspace.persona.characterDefinition;
         }
         
-        // 3. Workspace default prompt
-        if (currentWorkspace?.defaultPrompt) {
-          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
-          finalSystemPrompt += currentWorkspace.defaultPrompt;
-        }
-        
-        // 4. Custom system prompt từ parameter (cao nhất)
+        // 3. Custom system prompt từ parameter (cao nhất)
         if (systemPrompt) {
           if (finalSystemPrompt) finalSystemPrompt += '\n\n';
           finalSystemPrompt += systemPrompt;
         }
         
         console.log('🎯 Built system prompt:', {
-          hasSettingsPrompt: !!settings.systemPrompt,
-          hasPersonaPrompt: !!currentWorkspace?.persona?.systemPrompt,
-          hasWorkspacePrompt: !!currentWorkspace?.defaultPrompt,
+          hasGlobalSystemPrompt: !!settings?.globalSystemPrompt,
+          useGlobalSystemPrompt: currentWorkspace?.useGlobalSystemPrompt,
+          hasPersonaCharacterDefinition: !!currentWorkspace?.persona?.characterDefinition,
           hasCustomPrompt: !!systemPrompt,
-          finalLength: finalSystemPrompt.length
+          finalLength: finalSystemPrompt.length,
+          currentWorkspacePersona: currentWorkspace?.persona,
+          finalSystemPrompt: finalSystemPrompt.substring(0, 200) + '...'
         });
         
         return finalSystemPrompt || null;
@@ -210,10 +216,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       
       const response = await openAIService.sendMessage(
         apiMessages,
-        settings.model || 'gpt-3.5-turbo',
+        settings.model || 'gpt-3.5-turbo', // Always use global model
         {
-          temperature: settings.temperature || 0.7,
-          max_tokens: settings.max_tokens || 1000,
+          temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
+          max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
           systemPrompt: buildSystemPrompt()
         }
       );
@@ -282,21 +288,15 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       const buildSystemPrompt = () => {
         let finalSystemPrompt = '';
         
-        // 1. Global system prompt từ settings
-        if (settings.systemPrompt) {
-          finalSystemPrompt += settings.systemPrompt;
+        // 1. Global System Prompt từ user settings (only if workspace enables it)
+        if (settings?.globalSystemPrompt && currentWorkspace?.useGlobalSystemPrompt !== false) {
+          finalSystemPrompt += settings.globalSystemPrompt;
         }
         
-        // 2. Persona system prompt
-        if (currentWorkspace?.persona?.systemPrompt) {
+        // 2. Persona character definition
+        if (currentWorkspace?.persona?.characterDefinition) {
           if (finalSystemPrompt) finalSystemPrompt += '\n\n';
-          finalSystemPrompt += currentWorkspace.persona.systemPrompt;
-        }
-        
-        // 3. Workspace default prompt
-        if (currentWorkspace?.defaultPrompt) {
-          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
-          finalSystemPrompt += currentWorkspace.defaultPrompt;
+          finalSystemPrompt += currentWorkspace.persona.characterDefinition;
         }
         
         return finalSystemPrompt || null;
@@ -304,10 +304,10 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
 
       const response = await openAIService.sendMessage(
         apiMessages,
-        settings.model || 'gpt-3.5-turbo',
+        settings.model || 'gpt-3.5-turbo', // Always use global model
         {
-          temperature: settings.temperature || 0.7,
-          max_tokens: settings.max_tokens || 1000,
+          temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
+          max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
           systemPrompt: buildSystemPrompt()
         }
       );

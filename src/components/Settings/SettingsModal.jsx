@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MODELS, CHAT_SETTINGS } from '../../utils/constants';
-import { validateContextTokens } from '../../utils/helpers';
+import { MODELS } from '../../utils/constants';
 
 export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
   const [tempSettings, setTempSettings] = useState({...settings});
@@ -121,81 +120,6 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
             </div>
           </div>
 
-          {/* Advanced Settings */}
-          <div className="settings-section">
-            <h3>🎛️ Advanced Settings</h3>
-            
-            <div className="form-group">
-              <div className="temperature-slider">
-                <div className="slider-container">
-                  <label htmlFor="temperature" style={{ minWidth: '120px', fontWeight: '600', color: 'var(--text-primary)' }}>
-                    🌡️ Temperature:
-                  </label>
-                  <input
-                    id="temperature"
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.1"
-                    value={tempSettings.temperature}
-                    onChange={(e) => setTempSettings({
-                      ...tempSettings,
-                      temperature: parseFloat(e.target.value)
-                    })}
-                    className="slider-input"
-                  />
-                  <span className="slider-value" data-label="VALUE">
-                    {tempSettings.temperature}
-                  </span>
-                </div>
-                <small className="form-hint" style={{ marginTop: '12px', display: 'block', textAlign: 'center' }}>
-                  🎯 Điều chỉnh tính sáng tạo (0 = chính xác, 2 = sáng tạo)
-                </small>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="maxTokens">Max Tokens</label>
-              <input
-                id="maxTokens"
-                type="number"
-                min="100"
-                max="4000"
-                value={tempSettings.maxTokens}
-                onChange={(e) => setTempSettings({
-                  ...tempSettings,
-                  maxTokens: parseInt(e.target.value)
-                })}
-                className="form-input"
-              />
-              <small className="form-hint">
-                📝 Độ dài tối đa của phản hồi
-              </small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="contextTokens">Context Tokens</label>
-              <input
-                id="contextTokens"
-                type="number"
-                min={CHAT_SETTINGS.MIN_CONTEXT_TOKENS}
-                max={CHAT_SETTINGS.MAX_CONTEXT_TOKENS}
-                value={tempSettings.contextTokens || CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS}
-                onChange={(e) => {
-                  const validation = validateContextTokens(e.target.value);
-                  setTempSettings({
-                    ...tempSettings,
-                    contextTokens: validation.value
-                  });
-                }}
-                className="form-input"
-              />
-              <small className="form-hint">
-                🧠 Số tokens tối đa cho context (bao gồm lịch sử chat)
-              </small>
-            </div>
-          </div>
-
           {/* UI Settings */}
           <div className="settings-section">
             <h3>🎨 UI Settings</h3>
@@ -234,13 +158,13 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
             <h3>🤖 System Prompts</h3>
             
             <div className="form-group">
-              <label htmlFor="systemPrompt">Global System Prompt</label>
+              <label htmlFor="globalSystemPrompt">Global System Prompt</label>
               <textarea
-                id="systemPrompt"
-                value={tempSettings.systemPrompt || ''}
+                id="globalSystemPrompt"
+                value={tempSettings.globalSystemPrompt || ''}
                 onChange={(e) => setTempSettings({
                   ...tempSettings,
-                  systemPrompt: e.target.value
+                  globalSystemPrompt: e.target.value
                 })}
                 className="form-textarea"
                 rows={8}
@@ -252,32 +176,14 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="defaultWorkspacePrompt">Default Workspace Prompt</label>
-              <textarea
-                id="defaultWorkspacePrompt"
-                value={tempSettings.defaultWorkspacePrompt || ''}
-                onChange={(e) => setTempSettings({
-                  ...tempSettings,
-                  defaultWorkspacePrompt: e.target.value
-                })}
-                className="form-textarea"
-                rows={6}
-                placeholder="Nhập prompt mặc định cho workspace mới..."
-              />
-              <small className="form-hint">
-                📋 Prompt mặc định sẽ được sử dụng khi tạo workspace mới
-              </small>
-            </div>
-
-            <div className="form-group">
               <button
                 type="button"
                 className="reset-prompts-btn"
                 onClick={() => {
-                  // Reset to default prompts
+                  // Reset to default global system prompt
                   setTempSettings({
                     ...tempSettings,
-                    systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
+                    globalSystemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
 
 🎯 **Quy tắc định dạng:**
 - Sử dụng **bold** cho từ khóa quan trọng
@@ -288,17 +194,7 @@ export function SettingsModal({ isOpen, onClose, settings, onUpdateSetting }) {
 - Sử dụng > cho blockquotes khi cần nhấn mạnh
 - Sử dụng | | cho tables khi trình bày data
 
-Hãy luôn format đẹp để dễ đọc!`,
-                    defaultWorkspacePrompt: `Bạn đang làm việc trong một workspace chuyên nghiệp. Hãy:
-
-📋 **Nguyên tắc làm việc:**
-- Tập trung vào context của workspace hiện tại
-- Đưa ra lời khuyên practical và actionable
-- Giải thích rõ ràng từng bước thực hiện
-- Suggest best practices trong domain này
-- Hỗ trợ troubleshooting khi gặp vấn đề
-
-💡 **Mục tiêu:** Trở thành trợ lý đắc lực giúp hoàn thành công việc hiệu quả!`
+Hãy luôn format đẹp để dễ đọc!`
                   });
                 }}
               >
