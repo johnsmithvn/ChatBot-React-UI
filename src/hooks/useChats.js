@@ -59,7 +59,9 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       messages: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      model: settings.model || 'gpt-3.5-turbo'
+      model: currentWorkspace?.apiSettings?.useCustomApiKey ? 
+        (currentWorkspace?.apiSettings?.model || 'gpt-4o-mini') : 
+        (settings.model || 'gpt-4o-mini')
     };
     
     console.log('🆕 Creating new chat:', newChat);
@@ -70,7 +72,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     
     console.log('✅ New chat created and set as current:', { chatId: newChat.id, newChats });
     return newChat;
-  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId, settings.model]);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, setCurrentChatId, settings.model, currentWorkspace?.apiSettings?.useCustomApiKey, currentWorkspace?.apiSettings?.model]);
 
   // Xóa chat
   const deleteChat = useCallback((chatId) => {
@@ -155,27 +157,96 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       console.log('🔑 API call preparation:', {
         limitedMessages: limitedMessages.length,
         apiMessages: apiMessages.length,
-        systemPrompt: systemPrompt || currentWorkspace?.systemPrompt || settings.systemPrompt
+        workspaceSettings: currentWorkspace?.settings
       });
 
-      // Tạo instance OpenAIService với API key từ settings
-      const apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
-      console.log('🔑 API key check:', { hasApiKey: !!apiKey, apiKeyLength: apiKey?.length });
+      // Tạo instance OpenAIService với API key từ workspace hoặc settings
+      let apiKey, model;
+      
+      // Check if workspace uses custom API configuration
+      if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.apiKey) {
+        apiKey = currentWorkspace.apiSettings.apiKey;
+        model = currentWorkspace.apiSettings.model || 'gpt-4o-mini';
+        console.log('🔑 Using workspace API configuration:', { 
+          hasApiKey: !!apiKey, 
+          apiKeyLength: apiKey?.length,
+          model: model 
+        });
+      } else {
+        // Fall back to global settings
+        apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+        model = settings.model || 'gpt-4o-mini';
+        console.log('🔑 Using global API configuration:', { 
+          hasApiKey: !!apiKey, 
+          apiKeyLength: apiKey?.length,
+          model: model 
+        });
+      }
       
       if (!apiKey) {
-        throw new Error('No API key found');
+        throw new Error('No API key found. Please configure API key in workspace settings or global settings.');
       }
       
       const openAIService = new OpenAIService(apiKey);
 
       console.log('🚀 Calling OpenAI API...');
+      
+      // Build system prompt by combining all levels
+      const buildSystemPrompt = () => {
+        let finalSystemPrompt = '';
+        
+        // DEBUG: Log current workspace structure
+        console.log('🔍 DEBUG buildSystemPrompt:', {
+          currentWorkspace,
+          hasPersona: !!currentWorkspace?.persona,
+          hasCharacterDefinition: !!currentWorkspace?.persona?.characterDefinition,
+          characterDefinition: currentWorkspace?.persona?.characterDefinition,
+          globalSystemPrompt: settings?.globalSystemPrompt,
+          useGlobalSystemPrompt: currentWorkspace?.useGlobalSystemPrompt
+        });
+        
+        // 1. Global System Prompt từ user settings (only if workspace enables it)
+        if (settings?.globalSystemPrompt && currentWorkspace?.useGlobalSystemPrompt !== false) {
+          finalSystemPrompt += settings.globalSystemPrompt;
+        }
+        
+        // 2. Persona character definition (if workspace has persona)
+        if (currentWorkspace?.persona?.characterDefinition) {
+          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
+          finalSystemPrompt += currentWorkspace.persona.characterDefinition;
+        }
+        
+        // 3. Custom system prompt từ parameter (cao nhất)
+        if (systemPrompt) {
+          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
+          finalSystemPrompt += systemPrompt;
+        }
+        
+        console.log('🎯 Built system prompt:', {
+          hasGlobalSystemPrompt: !!settings?.globalSystemPrompt,
+          useGlobalSystemPrompt: currentWorkspace?.useGlobalSystemPrompt,
+          hasPersonaCharacterDefinition: !!currentWorkspace?.persona?.characterDefinition,
+          hasCustomPrompt: !!systemPrompt,
+          finalLength: finalSystemPrompt.length,
+          currentWorkspacePersona: currentWorkspace?.persona,
+          finalSystemPrompt: finalSystemPrompt.substring(0, 200) + '...'
+        });
+        
+        return finalSystemPrompt || null;
+      };
+      
       const response = await openAIService.sendMessage(
         apiMessages,
-        settings.model || 'gpt-3.5-turbo',
+        model, // Use workspace or global model
         {
-          temperature: settings.temperature || 0.7,
-          max_tokens: settings.max_tokens || 1000,
-          systemPrompt: systemPrompt || currentWorkspace?.systemPrompt || settings.systemPrompt || null
+          temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
+          max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
+          top_p: currentWorkspace?.settings?.topP || 1.0,
+          presence_penalty: currentWorkspace?.settings?.presencePenalty || 0.0,
+          frequency_penalty: currentWorkspace?.settings?.frequencyPenalty || 0.0,
+          stop: currentWorkspace?.settings?.stop?.length > 0 ? currentWorkspace?.settings?.stop : undefined,
+          logit_bias: Object.keys(currentWorkspace?.settings?.logitBias || {}).length > 0 ? currentWorkspace?.settings?.logitBias : undefined,
+          systemPrompt: buildSystemPrompt()
         }
       );
 
@@ -235,17 +306,55 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       const limitedMessages = limitMessagesByTokensWithPrompt(messagesUpToIndex, 4000);
       const apiMessages = prepareMessagesForAPI(limitedMessages);
 
-      // Tạo instance OpenAIService với API key từ settings
-      const apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+      // Tạo instance OpenAIService với API key từ workspace hoặc settings
+      let apiKey, model;
+      
+      // Check if workspace uses custom API configuration
+      if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.apiKey) {
+        apiKey = currentWorkspace.apiSettings.apiKey;
+        model = currentWorkspace.apiSettings.model || 'gpt-4o-mini';
+      } else {
+        // Fall back to global settings
+        apiKey = settings.getApiKey?.() || import.meta.env.VITE_OPENAI_API_KEY;
+        model = settings.model || 'gpt-4o-mini';
+      }
+      
+      if (!apiKey) {
+        throw new Error('No API key found. Please configure API key in workspace settings or global settings.');
+      }
+      
       const openAIService = new OpenAIService(apiKey);
+
+      // Build system prompt by combining all levels
+      const buildSystemPrompt = () => {
+        let finalSystemPrompt = '';
+        
+        // 1. Global System Prompt từ user settings (only if workspace enables it)
+        if (settings?.globalSystemPrompt && currentWorkspace?.useGlobalSystemPrompt !== false) {
+          finalSystemPrompt += settings.globalSystemPrompt;
+        }
+        
+        // 2. Persona character definition
+        if (currentWorkspace?.persona?.characterDefinition) {
+          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
+          finalSystemPrompt += currentWorkspace.persona.characterDefinition;
+        }
+        
+        return finalSystemPrompt || null;
+      };
 
       const response = await openAIService.sendMessage(
         apiMessages,
-        settings.model || 'gpt-3.5-turbo',
+        model, // Use workspace or global model
         {
-          temperature: settings.temperature || 0.7,
-          max_tokens: settings.max_tokens || 1000,
-          systemPrompt: currentWorkspace?.systemPrompt || settings.systemPrompt || null
+          temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
+          max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
+          top_p: currentWorkspace?.settings?.topP || 1.0,
+          presence_penalty: currentWorkspace?.settings?.presencePenalty || 0.0,
+          frequency_penalty: currentWorkspace?.settings?.frequencyPenalty || 0.0,
+          stop: currentWorkspace?.settings?.stop?.length > 0 ? currentWorkspace?.settings?.stop : undefined,
+          logit_bias: Object.keys(currentWorkspace?.settings?.logitBias || {}).length > 0 ? currentWorkspace?.settings?.logitBias : undefined,
+          systemPrompt: buildSystemPrompt()
         }
       );
 

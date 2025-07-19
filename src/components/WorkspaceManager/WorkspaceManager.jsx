@@ -7,41 +7,18 @@ import { WORKSPACE_CONFIG, DEFAULT_PERSONAS } from '../../utils/constants';
 export function WorkspaceManager({ 
   workspaces, 
   currentWorkspace, 
-  onCreateWorkspace,
   onSelectWorkspace,
-  onUpdateWorkspace,
   onDeleteWorkspace, // eslint-disable-line no-unused-vars
   onCreateGroup,
   onUpdateGroup,
   onDeleteGroup,
-  onMoveChatsToGroup
+  onMoveChatsToGroup,
+  settings, // Add settings prop
+  onCreateWorkspaceClick, // New prop to handle create workspace button click
+  onEditWorkspaceClick // New prop to handle edit workspace button click
 }) {
-  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
-
-  const handleCreateWorkspace = useCallback((workspaceData) => {
-    const newWorkspace = {
-      id: Date.now().toString(),
-      name: workspaceData.name || WORKSPACE_CONFIG.DEFAULT_WORKSPACE_NAME,
-      description: workspaceData.description || '',
-      persona: workspaceData.persona || DEFAULT_PERSONAS.assistant,
-      groups: [{
-        id: `group_${Date.now()}`,
-        name: WORKSPACE_CONFIG.DEFAULT_GROUP_NAME,
-        description: '',
-        chatIds: [],
-        promptTemplate: null,
-        persona: workspaceData.persona || DEFAULT_PERSONAS.assistant
-      }],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    onCreateWorkspace?.(newWorkspace);
-    setShowCreateWorkspace(false);
-  }, [onCreateWorkspace]);
 
   const handleCreateGroup = useCallback((groupData) => {
     const newGroup = {
@@ -50,7 +27,7 @@ export function WorkspaceManager({
       description: groupData.description || '',
       chatIds: [],
       promptTemplate: groupData.promptTemplate || null,
-      persona: groupData.persona || currentWorkspace?.persona || DEFAULT_PERSONAS.assistant,
+      persona: groupData.persona || currentWorkspace?.persona || Object.values(settings?.customPersonas || DEFAULT_PERSONAS)[0],
       defaultPrompt: groupData.defaultPrompt || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -58,7 +35,7 @@ export function WorkspaceManager({
     
     onCreateGroup?.(currentWorkspace.id, newGroup);
     setShowCreateGroup(false);
-  }, [currentWorkspace, onCreateGroup]);
+  }, [currentWorkspace, onCreateGroup, settings]);
 
   return (
     <div className="workspace-manager">
@@ -78,7 +55,7 @@ export function WorkspaceManager({
           </select>
           <button
             className="workspace-create-btn"
-            onClick={() => setShowCreateWorkspace(true)}
+            onClick={() => onCreateWorkspaceClick?.()}
             title="Create new workspace"
           >
             ➕
@@ -87,7 +64,16 @@ export function WorkspaceManager({
         
         {currentWorkspace && (
           <div className="workspace-info">
-            <h3 className="workspace-name">{currentWorkspace.name}</h3>
+            <div className="workspace-header-row">
+              <h3 className="workspace-name">{currentWorkspace.name}</h3>
+              <button
+                className="workspace-settings-btn"
+                onClick={() => onEditWorkspaceClick?.(currentWorkspace)}
+                title="Workspace Settings"
+              >
+                ⚙️
+              </button>
+            </div>
             <p className="workspace-description">{currentWorkspace.description}</p>
             <div className="workspace-persona">
               <span className="persona-label">Persona:</span>
@@ -125,31 +111,12 @@ export function WorkspaceManager({
         </div>
       )}
 
-      {/* Create Workspace Modal */}
-      {showCreateWorkspace && (
-        <WorkspaceForm
-          onSubmit={handleCreateWorkspace}
-          onCancel={() => setShowCreateWorkspace(false)}
-        />
-      )}
-
       {/* Create Group Modal */}
       {showCreateGroup && (
         <GroupForm
           onSubmit={handleCreateGroup}
           onCancel={() => setShowCreateGroup(false)}
-        />
-      )}
-
-      {/* Edit Workspace Modal */}
-      {editingWorkspace && (
-        <WorkspaceForm
-          workspace={editingWorkspace}
-          onSubmit={(data) => {
-            onUpdateWorkspace?.(editingWorkspace.id, data);
-            setEditingWorkspace(null);
-          }}
-          onCancel={() => setEditingWorkspace(null)}
+          settings={settings}
         />
       )}
 
@@ -162,6 +129,7 @@ export function WorkspaceManager({
             setEditingGroup(null);
           }}
           onCancel={() => setEditingGroup(null)}
+          settings={settings}
         />
       )}
     </div>
@@ -302,90 +270,14 @@ function GroupItem({ group, onEdit, onDelete, onDrop }) {
 }
 
 /**
- * Form tạo/chỉnh sửa workspace
- */
-function WorkspaceForm({ workspace, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    name: workspace?.name || '',
-    description: workspace?.description || '',
-    persona: workspace?.persona || DEFAULT_PERSONAS.assistant
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h3>{workspace ? 'Edit Workspace' : 'Create New Workspace'}</h3>
-          <button className="modal-close" onClick={onCancel}>✕</button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="workspace-form">
-          <div className="form-group">
-            <label>Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              placeholder="Enter workspace name"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              placeholder="Enter workspace description"
-              rows="3"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Default Persona</label>
-            <select
-              value={formData.persona?.id || ''}
-              onChange={(e) => {
-                const persona = Object.values(DEFAULT_PERSONAS).find(p => p.id === e.target.value);
-                setFormData({...formData, persona});
-              }}
-            >
-              {Object.values(DEFAULT_PERSONAS).map(persona => (
-                <option key={persona.id} value={persona.id}>
-                  {persona.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-actions">
-            <button type="button" onClick={onCancel} className="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary">
-              {workspace ? 'Update' : 'Create'} Workspace
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Form tạo/chỉnh sửa group
  */
-function GroupForm({ group, onSubmit, onCancel }) {
+function GroupForm({ group, onSubmit, onCancel, settings }) {
   const [formData, setFormData] = useState({
     name: group?.name || '',
     description: group?.description || '',
     promptTemplate: group?.promptTemplate || null,
-    persona: group?.persona || DEFAULT_PERSONAS.assistant,
+    persona: group?.persona || Object.values(settings?.customPersonas || DEFAULT_PERSONAS)[0],
     defaultPrompt: group?.defaultPrompt || ''
   });
 
@@ -429,11 +321,12 @@ function GroupForm({ group, onSubmit, onCancel }) {
             <select
               value={formData.persona?.id || ''}
               onChange={(e) => {
-                const persona = Object.values(DEFAULT_PERSONAS).find(p => p.id === e.target.value);
+                const personas = settings?.customPersonas || DEFAULT_PERSONAS;
+                const persona = Object.values(personas).find(p => p.id === e.target.value);
                 setFormData({...formData, persona});
               }}
             >
-              {Object.values(DEFAULT_PERSONAS).map(persona => (
+              {Object.values(settings?.customPersonas || DEFAULT_PERSONAS).map(persona => (
                 <option key={persona.id} value={persona.id}>
                   {persona.name}
                 </option>
@@ -458,11 +351,11 @@ function GroupForm({ group, onSubmit, onCancel }) {
             </div>
           </div>
           
-          <div className="form-actions">
-            <button type="button" onClick={onCancel} className="btn-secondary">
+          <div className="modal-footer">
+            <button type="button" onClick={onCancel} className="btn btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn btn-primary">
               {group ? 'Update' : 'Create'} Group
             </button>
           </div>

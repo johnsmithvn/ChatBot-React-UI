@@ -24,6 +24,11 @@ export class OpenAIService {
     const {
       temperature = 0.7,
       max_tokens = 1000,
+      top_p = 1.0,
+      presence_penalty = 0.0,
+      frequency_penalty = 0.0,
+      stop = undefined,
+      logit_bias = undefined,
       systemPrompt = null
     } = options;
 
@@ -44,6 +49,11 @@ export class OpenAIService {
           messages: fullMessages,
           temperature,
           max_tokens,
+          top_p,
+          presence_penalty,
+          frequency_penalty,
+          ...(stop && stop.length > 0 && { stop }),
+          ...(logit_bias && Object.keys(logit_bias).length > 0 && { logit_bias }),
           stream: false
         })
       });
@@ -90,6 +100,11 @@ export class OpenAIService {
     const {
       temperature = 0.7,
       max_tokens = 1000,
+      top_p = 1.0,
+      presence_penalty = 0.0,
+      frequency_penalty = 0.0,
+      stop = undefined,
+      logit_bias = undefined,
       systemPrompt = null
     } = options;
 
@@ -109,6 +124,11 @@ export class OpenAIService {
           messages: fullMessages,
           temperature,
           max_tokens,
+          top_p,
+          presence_penalty,
+          frequency_penalty,
+          ...(stop && stop.length > 0 && { stop }),
+          ...(logit_bias && Object.keys(logit_bias).length > 0 && { logit_bias }),
           stream: true
         })
       });

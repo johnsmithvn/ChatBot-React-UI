@@ -22,8 +22,7 @@ export const Sidebar = memo(function Sidebar({
   workspaces = [],
   currentWorkspace,
   onSelectWorkspace,
-  onOpenPromptModal,
-  onOpenWorkspaceInfo
+  onOpenPromptModal
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
@@ -117,7 +116,6 @@ export const Sidebar = memo(function Sidebar({
               onDeleteChat={onDeleteChat}
               onRenameChat={onRenameChat}
               onOpenPromptModal={onOpenPromptModal}
-              onOpenWorkspaceInfo={onOpenWorkspaceInfo}
             />
           </div>
         </>
@@ -129,10 +127,10 @@ export const Sidebar = memo(function Sidebar({
           <>
             <button 
               onClick={onWorkspaceClick}
-              className="footer-button workspace-button"
-              title="Workspace Manager"
+              className="footer-button workspace-button add-workspace"
+              title="Add New Workspace"
             >
-              🏢 Workspaces
+              ➕ New Workspace
             </button>
             
             <button 

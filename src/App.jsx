@@ -3,10 +3,8 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { SettingsModal } from './components/Settings/SettingsModal';
 import { TokenUsage } from './components/TokenUsage/TokenUsage';
 import { MessageActions } from './components/MessageActions/MessageActions';
-import { WorkspaceManager } from './components/WorkspaceManager/WorkspaceManager';
-import { PromptTemplateManager } from './components/PromptTemplateManager/PromptTemplateManager';
-import { WorkspacePromptModal } from './components/WorkspacePrompt/WorkspacePromptModal';
-import { WorkspaceInfoModal } from './components/WorkspaceInfo/WorkspaceInfoModal';
+import { WorkspaceSettingsModal } from './components/WorkspaceManager/WorkspaceSettingsModal';
+import { PromptTemplateManager, UseTemplateModal, TemplateForm } from './components/PromptTemplateManager/PromptTemplateManager';
 import { useChats } from './hooks/useChats';
 import { useSettings } from './hooks/useSettings';
 import { useWorkspace } from './hooks/useWorkspace';
@@ -18,13 +16,17 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showWorkspaceManager, setShowWorkspaceManager] = useState(false);
+  const [showWorkspaceSettings, setShowWorkspaceSettings] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
-  const [showPromptModal, setShowPromptModal] = useState(false);
-  const [showWorkspaceInfo, setShowWorkspaceInfo] = useState(false);
+  const [showUseTemplate, setShowUseTemplate] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+  const [showEditTemplate, setShowEditTemplate] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
   
   // Custom hooks
-  const { settings, updateSetting } = useSettings();
+  const { settings, updateSetting, addPersona } = useSettings();
   
   // Workspace management
   const {
@@ -34,7 +36,6 @@ function App() {
     updateWorkspace,
     deleteWorkspace,
     selectWorkspace,
-    updateWorkspacePrompt,
     initializeDefaultWorkspace,
     promptTemplates,
     createPromptTemplate,
@@ -92,14 +93,9 @@ function App() {
     const messageToSend = message.trim();
     setMessage('');
     
-    console.log('📤 handleSendMessage - currentWorkspace:', currentWorkspace);
-    console.log('📤 handleSendMessage - currentWorkspace.systemPrompt:', currentWorkspace?.systemPrompt);
+    console.log('📤 handleSendMessage - sending message:', messageToSend);
     
-    // Sử dụng system prompt từ workspace
-    const systemPrompt = currentWorkspace?.systemPrompt || null;
-    console.log('📤 handleSendMessage - final systemPrompt:', systemPrompt);
-    
-    await sendMessage(messageToSend, systemPrompt);
+    await sendMessage(messageToSend);
   };
 
   // Wrapper function để tạo chat mới
@@ -137,14 +133,19 @@ function App() {
           console.log("Settings button clicked, current state:", showSettings);
           setShowSettings(true);
         }}
-        onWorkspaceClick={() => setShowWorkspaceManager(true)}
+        onWorkspaceClick={() => {
+          setEditingWorkspace(null); // Null = create mode
+          setShowWorkspaceSettings(true);
+        }}
         onTemplateClick={() => setShowTemplateManager(true)}
         // Workspace props
         workspaces={workspaces}
         currentWorkspace={currentWorkspace}
         onSelectWorkspace={selectWorkspace}
-        onOpenPromptModal={() => setShowPromptModal(true)}
-        onOpenWorkspaceInfo={() => setShowWorkspaceInfo(true)}
+        onOpenPromptModal={() => {
+          setEditingWorkspace(currentWorkspace);
+          setShowWorkspaceSettings(true);
+        }}
       />
 
       {/* Main Chat Area */}
@@ -162,10 +163,10 @@ function App() {
                   🤖 {settings.model}
                 </span>
                 
-                {/* Workspace System Prompt Info */}
-                {currentWorkspace?.systemPrompt && (
+                {/* Workspace Persona Info */}
+                {currentWorkspace?.persona && (
                   <div className="workspace-prompt-info">
-                    <span className="prompt-active">🎯 Workspace Prompt Active</span>
+                    <span className="prompt-active">� {currentWorkspace.persona.name}</span>
                   </div>
                 )}
               </div>
@@ -432,28 +433,6 @@ function App() {
         />
       )}
 
-      {/* Workspace Manager Modal */}
-      {showWorkspaceManager && (
-        <div className="modal-overlay">
-          <div className="modal-content large">
-            <div className="modal-header">
-              <h3>🏢 Workspace Manager</h3>
-              <button className="modal-close" onClick={() => setShowWorkspaceManager(false)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <WorkspaceManager
-                workspaces={workspaces}
-                currentWorkspace={currentWorkspace}
-                onCreateWorkspace={createWorkspace}
-                onSelectWorkspace={selectWorkspace}
-                onUpdateWorkspace={updateWorkspace}
-                onDeleteWorkspace={deleteWorkspace}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Template Manager Modal */}
       {showTemplateManager && (
         <div className="modal-overlay">
@@ -466,30 +445,86 @@ function App() {
               <PromptTemplateManager
                 templates={promptTemplates}
                 onSelectTemplate={(template) => {
-                  setMessage(template);
-                  setShowTemplateManager(false);
+                  setSelectedTemplate(template);
+                  setShowUseTemplate(true);
                 }}
-                onCreateTemplate={createPromptTemplate}
-                onUpdateTemplate={updatePromptTemplate}
+                onCreateClick={() => {
+                  setShowCreateTemplate(true);
+                }}
+                onEditClick={(template) => {
+                  setEditingTemplate(template);
+                  setShowEditTemplate(true);
+                }}
                 onDeleteTemplate={deletePromptTemplate}
+                onClose={() => setShowTemplateManager(false)}
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Workspace Prompt Modal */}
-      <WorkspacePromptModal
-        isOpen={showPromptModal}
-        onClose={() => setShowPromptModal(false)}
-        workspace={currentWorkspace}
-        onSave={updateWorkspacePrompt}
-      />
+      {/* Use Template Modal */}
+      {showUseTemplate && selectedTemplate && (
+        <UseTemplateModal
+          template={selectedTemplate}
+          onUse={(processedTemplate) => {
+            setMessage(processedTemplate);
+            setShowUseTemplate(false);
+            setSelectedTemplate(null);
+          }}
+          onCancel={() => {
+            setShowUseTemplate(false);
+            setSelectedTemplate(null);
+            setShowTemplateManager(true);
+          }}
+        />
+      )}
 
-      {/* Workspace Info Modal */}
-      <WorkspaceInfoModal
-        isOpen={showWorkspaceInfo}
-        onClose={() => setShowWorkspaceInfo(false)}
+      {/* Create Template Modal */}
+      {showCreateTemplate && (
+        <TemplateForm
+          onSubmit={(templateData) => {
+            createPromptTemplate(templateData);
+            setShowCreateTemplate(false);
+          }}
+          onCancel={() => {
+            setShowCreateTemplate(false);
+            setShowTemplateManager(true);
+          }}
+        />
+      )}
+
+      {/* Edit Template Modal */}
+      {showEditTemplate && editingTemplate && (
+        <TemplateForm
+          template={editingTemplate}
+          onSubmit={(templateData) => {
+            updatePromptTemplate(editingTemplate.id, templateData);
+            setShowEditTemplate(false);
+            setEditingTemplate(null);
+          }}
+          onCancel={() => {
+            setShowEditTemplate(false);
+            setEditingTemplate(null);
+            setShowTemplateManager(true);
+          }}
+        />
+      )}
+
+      {/* Workspace Settings Modal - Unified for Create & Edit */}
+      <WorkspaceSettingsModal
+        isOpen={showWorkspaceSettings}
+        workspace={editingWorkspace} // null = create mode, object = edit mode
+        onClose={() => {
+          setShowWorkspaceSettings(false);
+          setEditingWorkspace(null);
+        }}
+        onUpdateWorkspace={updateWorkspace}
+        onCreateWorkspace={createWorkspace}
+        settings={{
+          ...settings,
+          onAddPersona: addPersona
+        }}
       />
     </div>
   );

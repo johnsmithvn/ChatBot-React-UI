@@ -1,6 +1,6 @@
 import { useLocalStorage } from './useLocalStorage';
 import { useCallback } from 'react';
-import { MODELS, API_CONFIG, CHAT_SETTINGS } from '../utils/constants';
+import { MODELS, API_CONFIG, DEFAULT_PERSONAS } from '../utils/constants';
 
 /**
  * Hook quản lý settings của ứng dụng
@@ -22,11 +22,8 @@ export function useSettings() {
     showTimestamps: true,
     markdownEnabled: true,
     
-    // Advanced Settings
-    temperature: 0.7,
-    maxTokens: 1000,
-    contextTokens: CHAT_SETTINGS.DEFAULT_CONTEXT_TOKENS,
-    systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
+    // Global System Prompt (configurable by user)
+    globalSystemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
 
 🎯 **Quy tắc định dạng:**
 - Sử dụng **bold** cho từ khóa quan trọng
@@ -37,7 +34,13 @@ export function useSettings() {
 - Sử dụng > cho blockquotes khi cần nhấn mạnh
 - Sử dụng | | cho tables khi trình bày data
 
-Hãy luôn format đẹp để dễ đọc!`
+Hãy luôn format đẹp để dễ đọc!`,
+
+    // Default Workspace Character Definition
+    defaultWorkspacePrompt: `Định nghĩa tính cách và cách thức hoạt động của AI trong workspace này...`,
+
+    // Custom Personas (user can modify these)
+    customPersonas: { ...DEFAULT_PERSONAS }
   });
 
   /**
@@ -75,20 +78,61 @@ Hãy luôn format đẹp để dễ đọc!`
       showTimestamps: true,
       markdownEnabled: true,
       temperature: 0.7,
-      maxTokens: 1000,
-      systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
 
-🎯 **Quy tắc định dạng:**
-- Sử dụng **bold** cho từ khóa quan trọng
-- Sử dụng \`inline code\` cho tên function, variable, command
-- Sử dụng \`\`\`language cho code blocks với ngôn ngữ cụ thể
-- Sử dụng ## cho headers chính, ### cho sub-headers  
-- Sử dụng - hoặc 1. cho lists
-- Sử dụng > cho blockquotes khi cần nhấn mạnh
-- Sử dụng | | cho tables khi trình bày data
+      defaultWorkspacePrompt: `Bạn đang làm việc trong một workspace chuyên nghiệp. Hãy:
 
-Hãy luôn format đẹp để dễ đọc!`
+📋 **Nguyên tắc làm việc:**
+- Tập trung vào context của workspace hiện tại
+- Đưa ra lời khuyên practical và actionable
+- Giải thích rõ ràng từng bước thực hiện
+- Suggest best practices trong domain này
+- Hỗ trợ troubleshooting khi gặp vấn đề
+
+💡 **Mục tiêu:** Trở thành trợ lý đắc lực giúp hoàn thành công việc hiệu quả!`,
+
+      customPersonas: { ...DEFAULT_PERSONAS }
     });
+  }, [setSettings]);
+
+  /**
+   * Persona Management Functions
+   */
+  const updatePersona = useCallback((personaId, updatedPersona) => {
+    setSettings(prev => ({
+      ...prev,
+      customPersonas: {
+        ...prev.customPersonas,
+        [personaId]: updatedPersona
+      }
+    }));
+  }, [setSettings]);
+
+  const addPersona = useCallback((persona) => {
+    setSettings(prev => ({
+      ...prev,
+      customPersonas: {
+        ...prev.customPersonas,
+        [persona.id]: persona
+      }
+    }));
+  }, [setSettings]);
+
+  const deletePersona = useCallback((personaId) => {
+    setSettings(prev => {
+      const newPersonas = { ...prev.customPersonas };
+      delete newPersonas[personaId];
+      return {
+        ...prev,
+        customPersonas: newPersonas
+      };
+    });
+  }, [setSettings]);
+
+  const resetPersonas = useCallback(() => {
+    setSettings(prev => ({
+      ...prev,
+      customPersonas: { ...DEFAULT_PERSONAS }
+    }));
   }, [setSettings]);
 
   /**
@@ -127,6 +171,12 @@ Hãy luôn format đẹp để dễ đọc!`
     updateSetting,
     updateSettings,
     resetSettings,
+    
+    // Persona management
+    updatePersona,
+    addPersona,
+    deletePersona,
+    resetPersonas,
     
     // Helpers
     isApiKeyValid,

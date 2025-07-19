@@ -132,28 +132,6 @@ export const SUCCESS_MESSAGES = {
   MESSAGE_COPIED: 'Message copied to clipboard!'
 };
 
-// Default system prompts
-export const SYSTEM_PROMPTS = {
-  DEFAULT: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và LUÔN sử dụng định dạng Markdown để làm đẹp câu trả lời:
-
-🎯 **Quy tắc định dạng:**
-- Sử dụng **bold** cho từ khóa quan trọng
-- Sử dụng \`inline code\` cho tên function, variable, command
-- Sử dụng \`\`\`language cho code blocks với ngôn ngữ cụ thể
-- Sử dụng ## cho headers chính, ### cho sub-headers  
-- Sử dụng - hoặc 1. cho lists
-- Sử dụng > cho blockquotes khi cần nhấn mạnh
-- Sử dụng | | cho tables khi trình bày data
-
-Hãy luôn format đẹp để dễ đọc!`,
-
-  CODING_ASSISTANT: `You are an expert programming assistant. Always provide clean, well-commented code examples and explain your solutions step by step.`,
-
-  TRANSLATOR: `You are a professional translator. Provide accurate translations while preserving the original meaning and context.`,
-
-  CREATIVE_WRITER: `You are a creative writing assistant. Help with storytelling, character development, and creative expression.`
-};
-
 // Workspace và Group Configuration
 export const WORKSPACE_CONFIG = {
   MAX_WORKSPACES: 10,
@@ -249,32 +227,52 @@ export const DEFAULT_PERSONAS = {
     id: 'assistant',
     name: '🤖 AI Assistant',
     description: 'Trợ lý AI thông minh và hữu ích',
-    systemPrompt: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và sử dụng markdown để format đẹp câu trả lời.`,
+    characterDefinition: `Bạn là một AI assistant thông minh và hữu ích. Hãy trả lời bằng tiếng Việt và sử dụng markdown để format đẹp câu trả lời.`,
     temperature: 0.7,
-    maxTokens: 1000
+    maxTokens: 1000,
+    topP: 1.0,
+    presencePenalty: 0.0,
+    frequencyPenalty: 0.0,
+    stop: [],
+    logitBias: {}
   },
   coding: {
     id: 'coding',
     name: '💻 Code Expert',
     description: 'Chuyên gia lập trình',
-    systemPrompt: `Bạn là một senior developer với kinh nghiệm sâu rộng. Hãy giúp viết code sạch, debug lỗi và đưa ra best practices.`,
+    characterDefinition: `Bạn là một senior developer với kinh nghiệm sâu rộng. Hãy giúp viết code sạch, debug lỗi và đưa ra best practices.`,
     temperature: 0.3,
-    maxTokens: 2000
+    maxTokens: 2000,
+    topP: 0.8,
+    presencePenalty: 0.1,
+    frequencyPenalty: 0.2,
+    stop: [],
+    logitBias: {}
   },
   creative: {
     id: 'creative',
     name: '🎨 Creative Writer',
     description: 'Nhà văn sáng tạo',
-    systemPrompt: `Bạn là một creative writer tài năng. Hãy viết content sáng tạo, hấp dẫn với ngôn ngữ sinh động và phong phú.`,
+    characterDefinition: `Bạn là một creative writer tài năng. Hãy viết content sáng tạo, hấp dẫn với ngôn ngữ sinh động và phong phú.`,
     temperature: 0.9,
-    maxTokens: 1500
+    maxTokens: 1500,
+    topP: 0.9,
+    presencePenalty: 0.6,
+    frequencyPenalty: 0.3,
+    stop: [],
+    logitBias: {}
   },
   analytical: {
     id: 'analytical',
     name: '📊 Data Analyst',
     description: 'Chuyên gia phân tích dữ liệu',
-    systemPrompt: `Bạn là một data analyst chuyên nghiệp. Hãy phân tích dữ liệu một cách logic, đưa ra insights và recommendations.`,
+    characterDefinition: `Bạn là một data analyst chuyên nghiệp. Hãy phân tích dữ liệu một cách logic, đưa ra insights và recommendations.`,
     temperature: 0.2,
-    maxTokens: 1200
+    maxTokens: 1200,
+    topP: 0.7,
+    presencePenalty: 0.1,
+    frequencyPenalty: 0.1,
+    stop: [],
+    logitBias: {}
   }
 };

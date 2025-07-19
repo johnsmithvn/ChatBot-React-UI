@@ -571,3 +571,520 @@
     text-align: left;
   }
 }
+
+/* =============================================
+   SYSTEM PROMPTS STYLES
+   ============================================= */
+
+/* Form Textarea */
+.form-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-default);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-light);
+  background: var(--background-light);
+}
+
+.form-textarea:hover {
+  border-color: var(--primary-color-light);
+}
+
+.form-textarea::placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Read-only Textarea */
+.form-textarea.readonly-textarea {
+  background: var(--bg-secondary, #f8f9fa) !important;
+  color: var(--text-secondary, #6c757d) !important;
+  cursor: not-allowed !important;
+  opacity: 0.8 !important;
+  border-color: var(--border-color, #e9ecef) !important;
+}
+
+.form-textarea.readonly-textarea:hover,
+.form-textarea.readonly-textarea:focus {
+  border-color: var(--border-color, #e9ecef) !important;
+  box-shadow: none !important;
+  background: var(--bg-secondary, #f8f9fa) !important;
+}
+
+/* Reset Prompts Button */
+.reset-prompts-btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+}
+
+.reset-prompts-btn:hover {
+  background: linear-gradient(135deg, #ff5252 0%, #e53935 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+}
+
+.reset-prompts-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
+}
+
+.reset-prompts-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.3);
+}
+
+/* =============================================
+   PERSONA MANAGEMENT STYLES
+   ============================================= */
+
+.personas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.persona-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--background-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.persona-item:hover {
+  border-color: var(--primary-color-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.persona-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.persona-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.persona-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.persona-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.persona-edit-btn,
+.persona-delete-btn {
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.persona-edit-btn {
+  color: var(--primary-color);
+}
+
+.persona-edit-btn:hover {
+  background: var(--primary-color-light);
+  transform: scale(1.1);
+}
+
+.persona-delete-btn {
+  color: #dc3545;
+}
+
+.persona-delete-btn:hover:not(:disabled) {
+  background: rgba(220, 53, 69, 0.1);
+  transform: scale(1.1);
+}
+
+.persona-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.persona-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.add-persona-btn,
+.reset-personas-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-persona-btn {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.add-persona-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.reset-personas-btn {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+.reset-personas-btn:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(107, 114, 128, 0.4);
+}
+
+/* =============================================
+   PERSONA MODAL STYLES
+   ============================================= */
+
+.persona-modal {
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+}
+
+.persona-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.required {
+  color: #dc3545;
+  margin-left: 2px;
+}
+
+.optional {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-default);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-light);
+}
+
+.form-input.error {
+  border-color: #dc3545;
+}
+
+.form-input.small {
+  width: 80px;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-default);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-color-light);
+}
+
+.form-textarea.error {
+  border-color: #dc3545;
+}
+
+.form-error {
+  display: block;
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-hint {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.advanced-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--background-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.setting-row label {
+  min-width: 100px;
+  margin-bottom: 0;
+  font-size: 13px;
+}
+
+.setting-row small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+/* =============================================
+   WORKSPACE SETTINGS MODAL
+   ============================================= */
+
+.workspace-settings-modal {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.workspace-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.workspace-settings-form .settings-section h4 {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-settings-form .persona-preview {
+  background: var(--background-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.workspace-settings-form .persona-preview .persona-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-style: italic;
+  margin: 0 0 8px 0;
+}
+
+.workspace-settings-form .persona-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workspace-settings-form .persona-settings {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.workspace-settings-form .persona-prompt-info {
+  color: var(--primary-color);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.workspace-settings-form .prompt-textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  line-height: 1.5;
+}
+
+.workspace-settings-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.workspace-settings-form .btn-secondary {
+  background: var(--background-light);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.workspace-settings-form .btn-secondary:hover {
+  background: var(--background-hover);
+  border-color: var(--primary-color-light);
+}
+
+.workspace-settings-form .btn-primary {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.workspace-settings-form .btn-primary:hover {
+  background: var(--primary-color-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Workspace header button styling */
+.workspace-settings-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+}
+
+.workspace-settings-btn:hover {
+  background: var(--primary-color-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4);
+}
+
+/* API Configuration Notice */
+.api-config-notice {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border: 1px solid #90caf9;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 8px 0;
+}
+
+.notice-content {
+  text-align: center;
+}
+
+.notice-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.notice-description {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.notice-instruction {
+  margin: 0;
+  font-size: 14px;
+  color: var(--primary-color);
+  font-weight: 500;
+  background: rgba(var(--primary-color-rgb), 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+}

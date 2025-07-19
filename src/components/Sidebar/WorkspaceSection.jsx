@@ -12,8 +12,7 @@ export function WorkspaceSection({
   onSelectChat,
   onDeleteChat,
   onRenameChat,
-  onOpenPromptModal,
-  onOpenWorkspaceInfo
+  onOpenPromptModal
 }) {
 
   if (!currentWorkspace) {
@@ -55,19 +54,10 @@ export function WorkspaceSection({
         <button
           className="workspace-action-button prompt-button"
           onClick={() => onOpenPromptModal?.()}
-          title="Configure workspace system prompt"
+          title="Configure workspace settings"
         >
           <span className="action-icon">⚙️</span>
-          <span className="action-text">Prompt</span>
-        </button>
-        
-        <button
-          className="workspace-action-button info-button"
-          onClick={() => onOpenWorkspaceInfo?.()}
-          title="Workspace information"
-        >
-          <span className="action-icon">ℹ️</span>
-          <span className="action-text">Info</span>
+          <span className="action-text">Settings</span>
         </button>
       </div>
 
