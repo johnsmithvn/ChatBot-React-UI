@@ -2,6 +2,29 @@
    WORKSPACE STYLES
    ============================================= */
 
+/* =============================================
+   WORKSPACE SECTION STYLES
+   ============================================= */
+
+/* Workspace Header */
+.workspace-header {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.workspace-info {
+  margin-top: 8px;
+}
+
+.workspace-description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  font-style: italic;
+}
+
 /* Workspace Section */
 .workspace-section {
   height: 100%;
@@ -744,4 +767,93 @@
   .chat-title {
     max-width: 120px;
   }
+}
+
+/* =============================================
+   WORKSPACE SELECTOR STYLES
+   ============================================= */
+
+.workspace-selector {
+  margin-bottom: 12px;
+}
+
+.workspace-select {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--background-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.workspace-select:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.workspace-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.workspace-select option {
+  padding: 8px;
+  color: var(--text-primary);
+  background: var(--background-secondary);
+}
+
+/* =============================================
+   NEW CHAT BUTTON STYLES
+   ============================================= */
+
+.new-chat-button {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  border: none;
+  border-radius: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.new-chat-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.3);
+}
+
+.new-chat-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.new-chat-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.new-chat-button .button-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.new-chat-button .button-text {
+  font-size: 14px;
+  font-weight: 600;
 }

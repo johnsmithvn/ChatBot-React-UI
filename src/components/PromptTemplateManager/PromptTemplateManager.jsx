@@ -74,7 +74,7 @@ export function PromptTemplateManager({
         <div className="modal-overlay">
           <div className="modal-content large">
             <div className="modal-header">
-              <h3>🎯 Use Template: {selectedTemplate.name}</h3>
+              <h3> Use Template: {selectedTemplate.name}</h3>
               <button className="modal-close" onClick={() => setSelectedTemplate(null)}>
                 ✕
               </button>
@@ -114,15 +114,15 @@ export function PromptTemplateManager({
               </div>
             </div>
             
-            <div className="modal-actions">
+            <div className="modal-footer">
               <button
-                className="btn-secondary"
+                className="btn btn-secondary"
                 onClick={() => setSelectedTemplate(null)}
               >
                 Cancel
               </button>
               <button
-                className="btn-primary"
+                className="btn btn-primary"
                 onClick={handleUseTemplate}
               >
                 Use Template
@@ -291,11 +291,11 @@ function TemplateForm({ template, onSubmit, onCancel }) {
             </div>
           </div>
           
-          <div className="form-actions">
-            <button type="button" onClick={onCancel} className="btn-secondary">
+          <div className="modal-footer">
+            <button type="button" onClick={onCancel} className="btn btn-secondary">
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn btn-primary">
               {template ? 'Update' : 'Create'} Template
             </button>
           </div>

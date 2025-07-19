@@ -13,13 +13,12 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000, // Tăng limit để tránh warning
     rollupOptions: {
       output: {
         manualChunks: {
           // Vendor chunks
           vendor: ['react', 'react-dom'],
-          openai: ['openai'],
           
           // UI chunks
           markdown: [
@@ -35,7 +34,9 @@ export default defineConfig({
           modals: [
             './src/components/Settings/SettingsModal.jsx',
             './src/components/WorkspaceManager/WorkspaceManager.jsx',
-            './src/components/PromptTemplateManager/PromptTemplateManager.jsx'
+            './src/components/PromptTemplateManager/PromptTemplateManager.jsx',
+            './src/components/WorkspacePrompt/WorkspacePromptModal.jsx',
+            './src/components/WorkspaceInfo/WorkspaceInfoModal.jsx'
           ]
         }
       }
