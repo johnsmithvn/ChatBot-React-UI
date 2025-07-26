@@ -65,14 +65,6 @@ export const LANGUAGES = {
   JAPANESE: 'ja'
 };
 
-// File upload limits
-export const FILE_LIMITS = {
-  MAX_SIZE: 20 * 1024 * 1024, // 20MB
-  MAX_FILES_PER_MESSAGE: 5,
-  SUPPORTED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-  SUPPORTED_DOCUMENT_TYPES: ['application/pdf', 'text/plain', 'text/markdown']
-};
-
 // Chat settings
 export const CHAT_SETTINGS = {
   MAX_MESSAGE_LENGTH: 4000,
@@ -111,27 +103,6 @@ export const STORAGE_KEYS = {
   API_KEY: 'user_api_key'
 };
 
-// Error messages
-export const ERROR_MESSAGES = {
-  NO_API_KEY: 'API Key is required. Please add your OpenAI API key in settings.',
-  INVALID_API_KEY: 'Invalid API Key. Please check your OpenAI API key.',
-  NETWORK_ERROR: 'Network error. Please check your internet connection.',
-  MESSAGE_TOO_LONG: `Message is too long. Maximum ${CHAT_SETTINGS.MAX_MESSAGE_LENGTH} characters allowed.`,
-  FILE_TOO_LARGE: `File is too large. Maximum ${FILE_LIMITS.MAX_SIZE / 1024 / 1024}MB allowed.`,
-  UNSUPPORTED_FILE_TYPE: 'Unsupported file type.',
-  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded. Please try again later.',
-  UNKNOWN_ERROR: 'An unexpected error occurred. Please try again.'
-};
-
-// Success messages
-export const SUCCESS_MESSAGES = {
-  CHAT_CREATED: 'New chat created successfully!',
-  CHAT_DELETED: 'Chat deleted successfully!',
-  SETTINGS_SAVED: 'Settings saved successfully!',
-  FILE_UPLOADED: 'File uploaded successfully!',
-  MESSAGE_COPIED: 'Message copied to clipboard!'
-};
-
 // Workspace và Group Configuration
 export const WORKSPACE_CONFIG = {
   MAX_WORKSPACES: 10,
@@ -143,12 +114,9 @@ export const WORKSPACE_CONFIG = {
 
 // Message Actions
 export const MESSAGE_ACTIONS = {
-  COPY: 'copy',
   EDIT: 'edit',
   REGENERATE: 'regenerate',
-  BRANCH: 'branch',
-  DELETE: 'delete',
-  BOOKMARK: 'bookmark'
+  DELETE: 'delete'
 };
 
 // Persona Types

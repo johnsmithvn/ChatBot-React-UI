@@ -54,7 +54,6 @@ export function WorkspaceSettingsModal({
     if (isOpen) {
       if (workspace) {
         // Edit mode: Load existing workspace data
-        console.log('🏢 Loading workspace for edit:', workspace);
         setFormData({
           name: workspace.name || '',
           description: workspace.description || '',
@@ -79,7 +78,6 @@ export function WorkspaceSettingsModal({
         });
       } else {
         // Create mode: Reset to defaults
-        console.log('🆕 Create mode - resetting to defaults');
         setFormData({
           name: '',
           description: '',

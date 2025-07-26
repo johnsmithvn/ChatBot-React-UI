@@ -26,7 +26,6 @@ export function useWorkspace() {
     );
     
     if (needsMigration) {
-      console.log('🔄 Migrating personas from systemPrompt to characterDefinition');
       const migratedWorkspaces = workspaces.map(ws => {
         if (ws.persona && !ws.persona.characterDefinition && ws.persona.systemPrompt) {
           return {
@@ -47,7 +46,6 @@ export function useWorkspace() {
 
   // Tạo workspace mặc định nếu chưa có
   const initializeDefaultWorkspace = useCallback(() => {
-    console.log('🏗️ initializeDefaultWorkspace called, workspaces.length:', workspaces.length);
     if (workspaces.length === 0) {
       const defaultWorkspace = {
         id: `workspace_${Date.now()}`,
@@ -63,12 +61,9 @@ export function useWorkspace() {
         updatedAt: new Date().toISOString()
       };
       
-      console.log('🏗️ Creating default workspace:', defaultWorkspace);
       setWorkspaces([defaultWorkspace]);
       setCurrentWorkspaceId(defaultWorkspace.id);
-      console.log('✅ Default workspace created:', defaultWorkspace);
     } else {
-      console.log('✅ Workspaces already exist:', workspaces);
       // Run persona migration for existing workspaces
       migratePersonas();
     }
