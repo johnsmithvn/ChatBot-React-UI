@@ -1,2 +1,33 @@
-VITE_OPENAI_API_KEY=key dien vao day khong can ''
-VITE_ENCRYPTION_SECRET=siêu_bí_mật_của_đại_ca
+# OpenAI API Configuration (cho OpenAI provider)
+# Lấy API key từ: https://platform.openai.com/api-keys
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+
+# Security - Thay đổi thành chuỗi bí mật của bạn
+VITE_ENCRYPTION_SECRET=your_super_secret_encryption_key_here
+
+# AI Hub Backend URL (cho Local AI Hub provider)
+# Đảm bảo AI Hub đang chạy trên port 8000
+VITE_MODEL_API_URL=http://localhost:8000/api/v1
+
+# Alternative API endpoints (uncomment để sử dụng)
+# VITE_MODEL_API_URL=http://localhost:1234/v1      # LM Studio
+# VITE_MODEL_API_URL=http://localhost:11434        # Ollama
+
+# Default model for local provider (optional)
+VITE_DEFAULT_MODEL=auto
+
+# App Configuration
+VITE_APP_NAME=ChatBot React UI - AI Hub Integration
+VITE_APP_VERSION=2.0.0
+
+# Debug mode (set to 'true' for development)
+VITE_DEBUG_MODE=true
+
+# =============================================================================
+# HƯỚNG DẪN SỬ DỤNG:
+# =============================================================================
+# 1. Copy file này thành .env
+# 2. Điền thông tin thực tế vào các field cần thiết
+# 3. Để sử dụng Local AI Hub: đảm bảo VITE_MODEL_API_URL = http://localhost:8000/api/v1
+# 4. Để sử dụng OpenAI: điền VITE_OPENAI_API_KEY
+# 5. Có thể sử dụng cả hai provider và switch trong Settings

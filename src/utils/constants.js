@@ -2,9 +2,33 @@
  * Các hằng số sử dụng trong ứng dụng
  */
 
+
+// Provider modes
+export const PROVIDERS = {
+  OPENAI: 'openai',
+  LOCAL: 'local'
+};
+
+// Provider info
+export const PROVIDER_INFO = {
+  [PROVIDERS.OPENAI]: {
+    name: 'OpenAI API',
+    description: 'Use OpenAI official API with your API key',
+    requiresApiKey: true,
+    icon: '🤖'
+  },
+  [PROVIDERS.LOCAL]: {
+    name: 'Local AI Hub',
+    description: 'Use local AI Hub server for model management',
+    requiresApiKey: false,
+    icon: '🏠'
+  }
+};
+
 // API Configuration
 export const API_CONFIG = {
   OPENAI_BASE_URL: 'https://api.openai.com/v1',
+  AI_HUB_BASE_URL: import.meta.env.VITE_MODEL_API_URL || 'http://localhost:8000/api/v1',
   API_KEY_PREFIX: 'sk-',
   MIN_API_KEY_LENGTH: 20
 };
@@ -244,3 +268,4 @@ export const DEFAULT_PERSONAS = {
     logitBias: {}
   }
 };
+

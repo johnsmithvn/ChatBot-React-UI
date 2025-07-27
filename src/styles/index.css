@@ -8,6 +8,7 @@
 /* Layout components */
 @import './sidebar.css';
 @import './chat.css';
+@import './provider-settings.css';
 @import './message.css';
 
 /* UI components */

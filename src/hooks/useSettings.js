@@ -1,16 +1,23 @@
 import { useLocalStorage } from './useLocalStorage';
 import { useCallback } from 'react';
-import { MODELS, API_CONFIG, DEFAULT_PERSONAS } from '../utils/constants';
+import { MODELS, API_CONFIG, DEFAULT_PERSONAS, PROVIDERS } from '../utils/constants';
 
 /**
  * Hook quản lý settings của ứng dụng
  */
 export function useSettings() {
   const [settings, setSettings] = useLocalStorage('app_settings', {
-    // API Settings
+    // Provider Settings
+    provider: PROVIDERS.OPENAI,
+    
+    // API Settings - OpenAI
     useCustomApiKey: false, // Toggle để sử dụng API key tùy chỉnh
     apiKey: '',
     model: MODELS.GPT_4O_MINI,
+    
+    // Local AI Hub Settings
+    selectedLocalModels: [], // Array of selected model names for local provider
+    localActiveModel: null, // Currently active local model
     
     // UI Settings
     theme: 'light',
@@ -68,9 +75,12 @@ Hãy luôn format đẹp để dễ đọc!`,
    */
   const resetSettings = useCallback(() => {
     setSettings({
+      provider: PROVIDERS.OPENAI,
       useCustomApiKey: false,
       apiKey: '',
       model: MODELS.GPT_4O_MINI,
+      selectedLocalModels: [],
+      localActiveModel: null,
       theme: 'light',
       language: 'vi',
       sidebarCollapsed: false,
@@ -136,20 +146,30 @@ Hãy luôn format đẹp để dễ đọc!`,
   }, [setSettings]);
 
   /**
-   * Validate API key
+   * Validate API configuration based on provider
    */
-  const isApiKeyValid = useCallback(() => {
-    if (!settings.useCustomApiKey) {
-      // Sử dụng env API key
-      return import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY.length > 0;
+  const isApiConfigValid = useCallback(() => {
+    if (settings.provider === PROVIDERS.OPENAI) {
+      if (!settings.useCustomApiKey) {
+        // Sử dụng env API key
+        return import.meta.env.VITE_OPENAI_API_KEY && import.meta.env.VITE_OPENAI_API_KEY.length > 0;
+      }
+      return settings.apiKey && settings.apiKey.startsWith(API_CONFIG.API_KEY_PREFIX) && settings.apiKey.length > API_CONFIG.MIN_API_KEY_LENGTH;
+    } else if (settings.provider === PROVIDERS.LOCAL) {
+      // Local provider không cần API key, chỉ cần có model được chọn
+      return settings.selectedLocalModels && settings.selectedLocalModels.length > 0;
     }
-    return settings.apiKey && settings.apiKey.startsWith(API_CONFIG.API_KEY_PREFIX) && settings.apiKey.length > API_CONFIG.MIN_API_KEY_LENGTH;
-  }, [settings.apiKey, settings.useCustomApiKey]);
+    return false;
+  }, [settings.provider, settings.apiKey, settings.useCustomApiKey, settings.selectedLocalModels]);
 
   /**
-   * Lấy API key hiện tại (từ settings hoặc env)
+   * Lấy API key hiện tại (chỉ cho OpenAI provider)
    */
   const getApiKey = useCallback(() => {
+    if (settings.provider !== PROVIDERS.OPENAI) {
+      return '';
+    }
+    
     // Ưu tiên API key do user nhập
     if (settings.useCustomApiKey && settings.apiKey && settings.apiKey.startsWith(API_CONFIG.API_KEY_PREFIX)) {
       return settings.apiKey;
@@ -161,7 +181,24 @@ Hãy luôn format đẹp để dễ đọc!`,
     // Nếu không có, log cảnh báo
     console.warn('⚠️ Không tìm thấy OpenAI API key!');
     return '';
-  }, [settings.apiKey, settings.useCustomApiKey]);
+  }, [settings.provider, settings.apiKey, settings.useCustomApiKey]);
+
+  /**
+   * Local model management functions
+   */
+  const updateSelectedLocalModels = useCallback((models) => {
+    setSettings(prev => ({
+      ...prev,
+      selectedLocalModels: models
+    }));
+  }, [setSettings]);
+
+  const setLocalActiveModel = useCallback((modelName) => {
+    setSettings(prev => ({
+      ...prev,
+      localActiveModel: modelName
+    }));
+  }, [setSettings]);
 
   return {
     // Settings object
@@ -178,8 +215,12 @@ Hãy luôn format đẹp để dễ đọc!`,
     deletePersona,
     resetPersonas,
     
+    // Local model management
+    updateSelectedLocalModels,
+    setLocalActiveModel,
+    
     // Helpers
-    isApiKeyValid,
+    isApiConfigValid,
     getApiKey
   };
 }

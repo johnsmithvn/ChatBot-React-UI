@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { MODELS } from '../../utils/constants';
+import { MODELS, PROVIDERS, PROVIDER_INFO } from '../../utils/constants';
+import { AIHubService } from '../../services/aiHub';
 import '../../styles/settings.css';
+import '../../styles/provider-settings.css';
 
 export function WorkspaceSettingsModal({ 
   isOpen, 
@@ -17,10 +19,15 @@ export function WorkspaceSettingsModal({
     persona: null,
     customCharacterDefinition: '', // For editing persona's characterDefinition
     useGlobalSystemPrompt: true, // New field - default true
+    provider: PROVIDERS.OPENAI, // Provider selection
     apiSettings: {
       useCustomApiKey: false,
       apiKey: '',
       model: 'gpt-4o-mini'
+    },
+    localSettings: {
+      selectedModels: [],
+      activeModel: null
     },
     settings: {
       temperature: 0.7,
@@ -36,6 +43,11 @@ export function WorkspaceSettingsModal({
 
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showAddPersonaModal, setShowAddPersonaModal] = useState(false);
+  const [localModels, setLocalModels] = useState([]);
+  const [loadingLocalModels, setLoadingLocalModels] = useState(false);
+  const [aiHubStatus, setAiHubStatus] = useState('unknown');
+  const aiHubService = useMemo(() => new AIHubService(), []);
+  
   const [newPersonaData, setNewPersonaData] = useState({
     name: '',
     description: '',
@@ -49,7 +61,86 @@ export function WorkspaceSettingsModal({
     logitBias: {}
   });
 
-  // Load workspace data when modal opens or reset for create mode
+  // Load local models when provider is LOCAL
+  useEffect(() => {
+    const loadLocalModels = async () => {
+      if (isOpen && formData.provider === PROVIDERS.LOCAL) {
+        try {
+          setLoadingLocalModels(true);
+          setAiHubStatus('checking');
+          
+          // Check AI Hub health
+          await aiHubService.getHealth();
+          setAiHubStatus('connected');
+          
+          // Load available models
+          const modelsResponse = await aiHubService.getModels();
+          setLocalModels(modelsResponse.data || modelsResponse);
+          
+        } catch (error) {
+          console.error('AI Hub connection failed:', error);
+          setAiHubStatus('error');
+          setLocalModels([]);
+        } finally {
+          setLoadingLocalModels(false);
+        }
+      }
+    };
+
+    loadLocalModels();
+  }, [isOpen, formData.provider, aiHubService]);
+
+  // Handlers for local model management
+  const handleLoadModel = async (modelName) => {
+    try {
+      await aiHubService.loadModel(modelName);
+      // Refresh models to get updated status
+      const modelsResponse = await aiHubService.getModels();
+      setLocalModels(modelsResponse.data || modelsResponse);
+    } catch (error) {
+      console.error('Failed to load model:', error);
+      alert(`Không thể load model ${modelName}: ${error.message}`);
+    }
+  };
+
+  const handleUnloadModel = async (modelName) => {
+    try {
+      await aiHubService.unloadModel(modelName);
+      // Refresh models to get updated status
+      const modelsResponse = await aiHubService.getModels();
+      setLocalModels(modelsResponse.data || modelsResponse);
+    } catch (error) {
+      console.error('Failed to unload model:', error);
+      alert(`Không thể unload model ${modelName}: ${error.message}`);
+    }
+  };
+
+  const handleSetActiveModel = (modelName) => {
+    setFormData(prev => ({
+      ...prev,
+      localSettings: {
+        ...prev.localSettings,
+        activeModel: modelName
+      }
+    }));
+  };
+
+  const handleModelSelection = (modelName, isSelected) => {
+    setFormData(prev => {
+      const currentSelected = prev.localSettings.selectedModels || [];
+      const newSelected = isSelected 
+        ? [...currentSelected, modelName]
+        : currentSelected.filter(name => name !== modelName);
+      
+      return {
+        ...prev,
+        localSettings: {
+          ...prev.localSettings,
+          selectedModels: newSelected
+        }
+      };
+    });
+  };
   useEffect(() => {
     if (isOpen) {
       if (workspace) {
@@ -60,10 +151,15 @@ export function WorkspaceSettingsModal({
           persona: workspace.persona || null,
           customCharacterDefinition: workspace.persona?.characterDefinition || '',
           useGlobalSystemPrompt: workspace.useGlobalSystemPrompt ?? true, // Default to true if not set
+          provider: workspace.provider || PROVIDERS.OPENAI, // Default to OpenAI
           apiSettings: {
             useCustomApiKey: workspace.apiSettings?.useCustomApiKey || false,
             apiKey: workspace.apiSettings?.apiKey || '',
             model: workspace.apiSettings?.model || 'gpt-4o-mini'
+          },
+          localSettings: {
+            selectedModels: workspace.localSettings?.selectedModels || [],
+            activeModel: workspace.localSettings?.activeModel || null
           },
           settings: {
             temperature: workspace.settings?.temperature || 0.7,
@@ -84,10 +180,15 @@ export function WorkspaceSettingsModal({
           persona: null, // Start with Default (no persona)
           customCharacterDefinition: settings?.defaultWorkspacePrompt || '', // Use default workspace prompt
           useGlobalSystemPrompt: true, // Default to true for new workspaces
+          provider: settings?.provider || PROVIDERS.OPENAI, // Use global provider setting as default
           apiSettings: {
             useCustomApiKey: false,
             apiKey: '',
             model: 'gpt-4o-mini'
+          },
+          localSettings: {
+            selectedModels: [],
+            activeModel: null
           },
           settings: {
             temperature: 0.7,
@@ -115,7 +216,9 @@ export function WorkspaceSettingsModal({
           characterDefinition: formData.customCharacterDefinition
         } : null,
         useGlobalSystemPrompt: formData.useGlobalSystemPrompt,
-        apiSettings: formData.apiSettings
+        provider: formData.provider,
+        apiSettings: formData.apiSettings,
+        localSettings: formData.localSettings
       };
       onUpdateWorkspace(workspace.id, updatedData);
     } else {
@@ -129,7 +232,9 @@ export function WorkspaceSettingsModal({
           characterDefinition: formData.customCharacterDefinition
         } : null,
         useGlobalSystemPrompt: formData.useGlobalSystemPrompt,
+        provider: formData.provider,
         apiSettings: formData.apiSettings,
+        localSettings: formData.localSettings,
         settings: formData.settings,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -289,7 +394,40 @@ export function WorkspaceSettingsModal({
             </div>
           </div>
 
-          {/* API Configuration Section */}
+          {/* Provider Selection Section */}
+          <div className="settings-section">
+            <h4>🔌 AI Provider</h4>
+            <p className="section-description">
+              Choose between OpenAI API or Local AI Hub for this workspace
+            </p>
+            
+            <div className="provider-selection">
+              {Object.entries(PROVIDER_INFO).map(([providerId, info]) => (
+                <label key={providerId} className="provider-option">
+                  <input
+                    type="radio"
+                    name="provider"
+                    value={providerId}
+                    checked={formData.provider === providerId}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      provider: e.target.value
+                    }))}
+                  />
+                  <div className="provider-card">
+                    <div className="provider-icon">{info.icon}</div>
+                    <div className="provider-info">
+                      <div className="provider-name">{info.name}</div>
+                      <div className="provider-description">{info.description}</div>
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* API Configuration Section - Only for OpenAI */}
+          {formData.provider === PROVIDERS.OPENAI && (
           <div className="settings-section">
             <h4>🔑 API Configuration</h4>
             
@@ -374,6 +512,123 @@ export function WorkspaceSettingsModal({
               </div>
             )}
           </div>
+          )}
+
+          {/* Local AI Hub Configuration - Only for Local provider */}
+          {formData.provider === PROVIDERS.LOCAL && (
+            <div className="settings-section">
+              <h4>🏠 Local AI Hub Configuration</h4>
+              <p className="section-description">
+                Configure local models for this workspace
+              </p>
+              
+              <div className="ai-hub-status">
+                <div className={`status-indicator ${aiHubStatus}`}>
+                  {aiHubStatus === 'checking' && '🔄 Checking connection...'}
+                  {aiHubStatus === 'connected' && '✅ Connected to AI Hub'}
+                  {aiHubStatus === 'error' && '❌ Failed to connect to AI Hub'}
+                  {aiHubStatus === 'unknown' && '⏳ Not checked yet'}
+                </div>
+              </div>
+
+              {aiHubStatus === 'connected' && (
+                <div className="local-models-section">
+                  <h5>🤖 Available Models</h5>
+                  
+                  {loadingLocalModels ? (
+                    <div className="loading-models">🔄 Loading models...</div>
+                  ) : (
+                    <div className="models-list">
+                      {localModels.length === 0 ? (
+                        <div className="no-models">No models found</div>
+                      ) : (
+                        localModels.map((model) => (
+                          <div key={model.id || model.name} className="model-item">
+                            <div className="model-info">
+                              <div className="model-name">{model.id || model.name}</div>
+                              <div className="model-details">
+                                <span className={`model-status ${model.status || 'unknown'}`}>
+                                  {model.status === 'loaded' && '🟢 Loaded'}
+                                  {model.status === 'unloaded' && '🔴 Unloaded'}
+                                  {model.status === 'loading' && '� Loading...'}
+                                  {!model.status && '⚫ Unknown'}
+                                </span>
+                                {model.provider && (
+                                  <span className="model-provider">{model.provider}</span>
+                                )}
+                                {model.vram_usage && (
+                                  <span className="model-vram">VRAM: {model.vram_usage}MB</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="model-actions">
+                              <label className="model-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={(formData.localSettings.selectedModels || []).includes(model.id || model.name)}
+                                  onChange={(e) => handleModelSelection(model.id || model.name, e.target.checked)}
+                                />
+                                <span>Select</span>
+                              </label>
+                              
+                              {model.status === 'loaded' ? (
+                                <button 
+                                  type="button"
+                                  className="unload-btn"
+                                  onClick={() => handleUnloadModel(model.id || model.name)}
+                                >
+                                  🔴 Unload
+                                </button>
+                              ) : (
+                                <button 
+                                  type="button"
+                                  className="load-btn"
+                                  onClick={() => handleLoadModel(model.id || model.name)}
+                                >
+                                  🟢 Load
+                                </button>
+                              )}
+                              
+                              {model.status === 'loaded' && (
+                                <button 
+                                  type="button"
+                                  className={`active-btn ${formData.localSettings.activeModel === (model.id || model.name) ? 'active' : ''}`}
+                                  onClick={() => handleSetActiveModel(model.id || model.name)}
+                                >
+                                  {formData.localSettings.activeModel === (model.id || model.name) ? '⭐ Active' : '⭐ Set Active'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  
+                  {(formData.localSettings.selectedModels || []).length > 0 && (
+                    <div className="selected-models-summary">
+                      <h6>📋 Selected Models ({(formData.localSettings.selectedModels || []).length})</h6>
+                      <div className="selected-models-list">
+                        {(formData.localSettings.selectedModels || []).map(modelName => (
+                          <span key={modelName} className="selected-model-tag">
+                            {modelName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.localSettings.activeModel && (
+                    <div className="active-model-info">
+                      <p><strong>🎯 Active Model:</strong> {formData.localSettings.activeModel}</p>
+                      <small>This model will be used for chat completions in this workspace</small>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* AI Persona & Configuration Section - Merged */}
           <div className="settings-section">

@@ -1,23 +1,19 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { generateChatTitle, limitMessagesByTokensWithPrompt, prepareMessagesForAPI } from '../utils/helpers';
-import { buildSystemPrompt, buildWorkspaceAISettings } from '../utils/aiHubHelpers';
-import { useAIService } from './useAIService';
+import { AIService } from '../services/aiService';
 import { PROVIDERS } from '../utils/constants';
 
 /**
  * Hook quản lý tất cả logic chat theo workspace
  * Bao gồm: tạo chat, xóa chat, gửi tin nhắn, lưu trữ
  * 
- * Version: 2.0 - Workspace-based chat isolation
+ * Version: 2.1 - Unified AI Service với support cho OpenAI và Local AI Hub
  */
 export function useChats(settings = {}, currentWorkspaceId = null, currentWorkspace = null) {
   const [allChats, setAllChats] = useLocalStorage('workspace_chats', {});
   const [currentChatId, setCurrentChatId] = useLocalStorage('current_chat_id', null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Initialize AI service
-  const { sendMessage: sendAIMessage } = useAIService();
 
   // Lấy chats của workspace hiện tại với useMemo để tối ưu
   const chats = useMemo(() => {
@@ -43,8 +39,6 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       return updated;
     });
   }, [setAllChats, currentWorkspaceId]);
-
-  // Không tự động tạo chat - user sẽ tự tạo khi cần
 
   // Tạo chat mới
   const createNewChat = useCallback(() => {
@@ -94,8 +88,31 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     updateWorkspaceChats(newChats);
   }, [currentWorkspaceId, chats, updateWorkspaceChats]);
 
+  // Hàm tạo AI Service với cấu hình phù hợp
+  const createAIService = useCallback(() => {
+    let serviceSettings;
+    
+    // Check if workspace uses custom API configuration
+    if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.apiKey) {
+      serviceSettings = {
+        provider: PROVIDERS.OPENAI,
+        useCustomApiKey: true,
+        apiKey: currentWorkspace.apiSettings.apiKey,
+        model: currentWorkspace.apiSettings.model || 'gpt-4o-mini'
+      };
+    } else {
+      // Fall back to global settings
+      serviceSettings = {
+        ...settings,
+        provider: settings.provider || PROVIDERS.OPENAI
+      };
+    }
+    
+    return new AIService(serviceSettings);
+  }, [currentWorkspace, settings]);
+
   // Gửi tin nhắn
-  const sendMessage = useCallback(async (messageContent, customSystemPrompt = null) => {
+  const sendMessage = useCallback(async (messageContent, systemPrompt = null) => {
     if (!currentWorkspaceId) {
       console.error('❌ No currentWorkspaceId');
       return;
@@ -138,18 +155,54 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       const limitedMessages = limitMessagesByTokensWithPrompt(updatedChat.messages, 4000);
       const apiMessages = prepareMessagesForAPI(limitedMessages);
 
-      // Build system prompt using helper function
-      const systemPrompt = buildSystemPrompt(currentWorkspace, settings, customSystemPrompt);
-
-      // Build AI settings using helper function
-      const aiSettings = buildWorkspaceAISettings(currentWorkspace, settings);
+      const aiService = createAIService();
       
-      const response = await sendAIMessage(
+      // Build system prompt by combining all levels
+      const buildSystemPrompt = () => {
+        let finalSystemPrompt = '';
+        
+        // 1. Global System Prompt từ user settings (only if workspace enables it)
+        if (settings?.globalSystemPrompt && currentWorkspace?.useGlobalSystemPrompt !== false) {
+          finalSystemPrompt += settings.globalSystemPrompt;
+        }
+        
+        // 2. Persona character definition (if workspace has persona)
+        if (currentWorkspace?.persona?.characterDefinition) {
+          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
+          finalSystemPrompt += currentWorkspace.persona.characterDefinition;
+        }
+        
+        // 3. Custom system prompt từ parameter (cao nhất)
+        if (systemPrompt) {
+          if (finalSystemPrompt) finalSystemPrompt += '\n\n';
+          finalSystemPrompt += systemPrompt;
+        }
+        
+        return finalSystemPrompt || null;
+      };
+
+      // Determine model to use
+      let model = null;
+      if (currentWorkspace?.apiSettings?.useCustomApiKey) {
+        model = currentWorkspace.apiSettings.model;
+      } else if (settings.provider === PROVIDERS.OPENAI) {
+        model = settings.model;
+      } else if (settings.provider === PROVIDERS.LOCAL) {
+        model = settings.localActiveModel;
+      }
+      
+      const response = await aiService.sendMessage(
         apiMessages,
-        aiSettings.model,
+        model,
         {
-          ...aiSettings,
-          systemPrompt
+          temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
+          max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
+          top_p: currentWorkspace?.settings?.topP || 1.0,
+          presence_penalty: currentWorkspace?.settings?.presencePenalty || 0.0,
+          frequency_penalty: currentWorkspace?.settings?.frequencyPenalty || 0.0,
+          stop: currentWorkspace?.settings?.stop?.length > 0 ? currentWorkspace?.settings?.stop : undefined,
+          logit_bias: Object.keys(currentWorkspace?.settings?.logitBias || {}).length > 0 ? currentWorkspace?.settings?.logitBias : undefined,
+          systemPrompt: buildSystemPrompt()
         }
       );
 
@@ -169,7 +222,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
             ...chat,
             messages: newMessages,
             updatedAt: new Date().toISOString(),
-            title: chat.title === 'New Chat' ? generateChatTitle(newMessages[0]?.content) : chat.title
+            title: chat.title === 'New Chat' ? generateChatTitle(messageContent) : chat.title
           };
         }
         return chat;
@@ -177,32 +230,71 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
 
       updateWorkspaceChats(finalChats);
       return response;
+
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Hiển thị lỗi trong chat
+      const errorMessage = {
+        id: `msg_${Date.now() + 1}`,
+        content: `❌ **Error**: ${error.message}`,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        error: true
+      };
+
+      const errorChats = updatedChats.map(chat => {
+        if (chat.id === targetChatId) {
+          return {
+            ...chat,
+            messages: [...chat.messages, errorMessage],
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return chat;
+      });
+
+      updateWorkspaceChats(errorChats);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [currentWorkspaceId, chats, currentChatId, updateWorkspaceChats, settings, currentWorkspace, sendAIMessage]);
+  }, [currentWorkspaceId, currentChatId, chats, updateWorkspaceChats, settings, currentWorkspace, createAIService]);
 
   // Regenerate response
-  const regenerateResponse = useCallback(async (chatId, messageIndex) => {
-    if (!currentWorkspaceId) return;
-    
-    const targetChat = chats.find(chat => chat.id === chatId);
-    if (!targetChat) return;
+  const regenerateResponse = useCallback(async (chatId) => {
+    if (!currentWorkspaceId || !chatId) return;
 
-    const messagesUpToIndex = targetChat.messages.slice(0, messageIndex);
-    const updatedChats = chats.map(chat =>
-      chat.id === chatId ? { ...chat, messages: messagesUpToIndex, updatedAt: new Date().toISOString() } : chat
-    );
+    const targetChat = chats.find(chat => chat.id === chatId);
+    if (!targetChat || targetChat.messages.length === 0) return;
+
+    // Tìm tin nhắn cuối cùng của user
+    const lastUserMessageIndex = targetChat.messages.map(msg => msg.role).lastIndexOf('user');
+    if (lastUserMessageIndex === -1) return;
+
+    // Xóa tất cả assistant messages sau user message cuối cùng
+    const messagesUpToLastUser = targetChat.messages.slice(0, lastUserMessageIndex + 1);
+    
+    // Cập nhật chat để xóa response cũ
+    const updatedChats = chats.map(chat => {
+      if (chat.id === chatId) {
+        return {
+          ...chat,
+          messages: messagesUpToLastUser,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return chat;
+    });
 
     updateWorkspaceChats(updatedChats);
     setIsLoading(true);
 
     try {
-      const limitedMessages = limitMessagesByTokensWithPrompt(messagesUpToIndex, 4000);
+      const limitedMessages = limitMessagesByTokensWithPrompt(messagesUpToLastUser, 4000);
       const apiMessages = prepareMessagesForAPI(limitedMessages);
+
+      const aiService = createAIService();
 
       // Build system prompt by combining all levels
       const buildSystemPrompt = () => {
@@ -223,16 +315,18 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
       };
 
       // Determine model to use
-      let modelToUse = null;
-      if (currentWorkspace?.apiSettings?.useCustomApiKey && currentWorkspace?.apiSettings?.model) {
-        modelToUse = currentWorkspace.apiSettings.model;
-      } else if (settings.model) {
-        modelToUse = settings.model;
+      let model = null;
+      if (currentWorkspace?.apiSettings?.useCustomApiKey) {
+        model = currentWorkspace.apiSettings.model;
+      } else if (settings.provider === PROVIDERS.OPENAI) {
+        model = settings.model;
+      } else if (settings.provider === PROVIDERS.LOCAL) {
+        model = settings.localActiveModel;
       }
 
-      const response = await sendAIMessage(
+      const response = await aiService.sendMessage(
         apiMessages,
-        modelToUse,
+        model,
         {
           temperature: currentWorkspace?.settings?.temperature || currentWorkspace?.persona?.temperature || 0.7,
           max_tokens: currentWorkspace?.settings?.maxTokens || currentWorkspace?.persona?.maxTokens || 1000,
@@ -272,7 +366,7 @@ export function useChats(settings = {}, currentWorkspaceId = null, currentWorksp
     } finally {
       setIsLoading(false);
     }
-  }, [currentWorkspaceId, chats, updateWorkspaceChats, settings, currentWorkspace, sendAIMessage]);
+  }, [currentWorkspaceId, chats, updateWorkspaceChats, settings, currentWorkspace, createAIService]);
 
   // Delete message
   const deleteMessage = useCallback((chatId, messageId) => {
